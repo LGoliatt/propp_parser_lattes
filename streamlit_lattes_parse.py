@@ -2,13 +2,10 @@
 #%%: streamlit run /home/goliatt/cpa_ufjf/streamlit_app.py 
 import streamlit as st
 import pandas as pd
-import untangle
-import zipfile
-import glob
 import re
 import os
-import glob
-import xml.etree.ElementTree as ET
+import xml
+ET=xml.etree.ElementTree
 #%%
 ano_ref=2001
 
@@ -22,10 +19,10 @@ def get_attr(xml):
         get_attr(child)
     return attributes
 
-def atualiza_qualis(fd='./qualis'):
-    qn=glob.glob(fd+'/*xls*')
-    Q=pd.read_excel(qn[0])
-    Q[['ISSN','Estrato']].drop_duplicates().to_csv(fd+'/qualis.csv', sep=';', index=False)
+def atualiza_qualis():
+    qn='./qualis/classificações_publicadas_todas_as_areas_avaliacao1672761192111.xlsx'
+    Q=pd.read_excel(qn)
+    Q[['ISSN','Estrato']].drop_duplicates().to_csv('./qualis/qualis.csv', sep=';', index=False)
     return None
 
 def read_qualis(fn='./qualis/qualis.csv'):
@@ -38,10 +35,9 @@ def read_tags():
     
     key='1U7K2TGPz6YPLJPKgjOp-io0an94dSVQvtq9-lttYH4M'
     link='https://docs.google.com/spreadsheet/ccc?key='+key+'&output=csv'
-    print(link)
     tags = pd.read_csv(link, sep=',')
     
-    idx=[i=='Sim' for i in  tags['Contabilizar?'].values]
+    idx=[i=='Sim' for i in  tags['Contabilizar'].values]
     list_tags = tags['Tag'][idx].values
 
     return list_tags
@@ -62,8 +58,9 @@ st.header("Universidade Federal de Juiz de Fora")
 #     )
     
 uploaded_file = './data/9030707448549156.zip'
+uploaded_file = './data/9030707448549156.xml'
 
-a=[]    
+A=[]    
 if uploaded_file is not None:
     # Read the uploaded file content
     #bytes_data = uploaded_file.read()
@@ -72,10 +69,10 @@ if uploaded_file is not None:
     #st.write("Filename:", uploaded_file.name)
     #st.write("File size:", uploaded_file.size, "bytes")
 
-    archive = zipfile.ZipFile(uploaded_file, 'r')
-    xml = archive.open('curriculo.xml')
+    #archive = zipfile.ZipFile(uploaded_file, 'r')
+    #xmlfile = archive.open('curriculo.xml')
     
-    xmlTree = ET.parse(xml)
+    xmlTree = ET.parse(uploaded_file)
 
     with st.status("Buscando lista de tags..."):
         st.write("Fazendo download das tags...")
@@ -110,12 +107,12 @@ if uploaded_file is not None:
                                 #st.write(s)
                                 #st.write('-'*80)
                                 ss='NATUREZA' if 'NATUREZA' in s else 'TIPO'
-                                print(elem.tag, s[ss])
-                                a.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss]})
+                                st.write(elem.tag, s[ss]) 
+                                A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss]})
 #%%
-a=pd.DataFrame(a)
-a.drop_duplicates(inplace=True)
-st.table(a)
+A=pd.DataFrame(A)
+A.drop_duplicates(inplace=True)
+st.table(A)
 #%%     
 
 #%%     

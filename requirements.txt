@@ -1,6 +1,5 @@
 os
 re
-glob
 xml
 numpy
 pandas
