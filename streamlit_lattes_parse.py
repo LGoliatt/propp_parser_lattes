@@ -156,7 +156,7 @@ uploaded_file = st.file_uploader(
      )
 
 ano_ref = st.number_input(label="Entre com o ano de referência",
-                min_value=1980, max_value=2024, value=2001, 
+                min_value=1980, max_value=2024, value=2021, 
                 step=1, format="%d")  
 
 qualis=read_qualis()
@@ -165,7 +165,7 @@ qualis=read_qualis()
 #uploaded_file = 'data/xml_cvbase_src_main_resources_CurriculoLattes.xsd'
 #uploaded_file = '/home/goliatt/Downloads/6885901755516721.xml'
 #uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
-#uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
+#       uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
 
 #%%
 A=[]    
