@@ -161,7 +161,7 @@ ano_ref = st.number_input(label="Entre com o ano de referência",
 
 qualis=read_qualis()
 #uploaded_file = './data/9030707448549156.zip'
-#uploaded_file = './data/9030707448549156.xml'
+uploaded_file = './data/9030707448549156.xml'
 #uploaded_file = 'data/xml_cvbase_src_main_resources_CurriculoLattes.xsd'
 #uploaded_file = '/home/goliatt/Downloads/6885901755516721.xml'
 #uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
@@ -218,7 +218,7 @@ if uploaded_file is not None:
     "DEMAIS-TIPOS-DE-PRODUCAO-BIBLIOGRAFICA",
     "ARTIGOS-ACEITOS-PARA-PUBLICACAO",
     "LIVROS-PUBLICADOS-OU-ORGANIZADOS", 
-    'CAPITULOS-DE-LIVROS-PUBLICADOS'
+    'CAPITULOS-DE-LIVROS-PUBLICADOS',
     # -- SEGMENTO DE OUTRA PRODUCAO
     "PRODUCAO-ARTISTICA-CULTURAL",
     "ORIENTACOES-CONCLUIDAS",
@@ -257,7 +257,7 @@ if uploaded_file is not None:
                         #print(f"{elem.tag} \t\t--\t {e.tag}")
                         line=get_properties(e.tag, attribute, ano_ref)              
                         A.append(line)
-                        #print(e.tag)
+                        print(e.tag)
                         
                     
                 #line=get_properties(elem.tag, attributes, ano_ref)
