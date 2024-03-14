@@ -48,10 +48,10 @@ st.header("Universidade Federal de Juiz de Fora")
 
 st.markdown('**Leitura do arquivo XML**')
 uploaded_file = st.file_uploader(
-     label=':violet[Escolha o arquivo XML]',
+     label='Escolha o arquivo XML do Currículo Lattes',
      type=['xml'],
      accept_multiple_files=False, key='uploaded_file',
-     label_visibility='hidden',
+     #label_visibility='hidden',
      )
  
 ano_ref = st.number_input(label="Entre com o ano de referência",
