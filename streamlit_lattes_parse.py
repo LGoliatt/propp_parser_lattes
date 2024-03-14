@@ -99,13 +99,14 @@ if uploaded_file is not None:
                 aux=attributes
                 aux[0]['TIPO-PRODUCAO']=elem.tag
                 #st.write(aux)
-                print(aux)
+                #print(aux)
                 #json_string = json.dumps(aux,indent=True)
                 #print(elem.tag, len(aux),aux[0])
                 #aux[0]['ANO-DO-ARTIGO']
                 for s in aux:
                     if ('NATUREZA' in s) or ('TIPO' in s):
                         #print('**')                    
+                        # recupera ano
                         for i in s:                    
                             if 'ANO' in i:
                                 k=i
@@ -113,22 +114,35 @@ if uploaded_file is not None:
                         if k!=None:
                             ano=int(s[k])
                                    
+                                   
                             if ano>=ano_ref:
                                 #print(ano)
                                 #print(aux[0])            
                                 # st.write(elem.tag, s.keys())
                                 l=list(s.keys()); l=l[-1:]+l[:-1]; 
-                                s={k: s[k] for k in l}
-                                st.write(s)
+                                t={k: s[k] for k in l}
+                                #st.write(t)
+                                # recupera titulo
+                                titulo=None
+                                for i in t:                    
+                                    if 'TITULO' in i and 'INGLES' not in  i:
+                                        kk=i
+                                                                    
+                                if kk!=None:
+                                    titulo=t[kk]
+                              
                                 #st.write('-'*80)
                                 ss='NATUREZA' if 'NATUREZA' in s else 'TIPO'
                                 #st.write(elem.tag, s[ss]) 
-                                print(elem.tag, s[ss]) 
-                                A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss]})
+                                #print(elem.tag, t[ss]) 
+                                A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss],
+                                          'ANO':str(ano), 'PONTOS':0,
+                                          'TITULO':titulo})
 #%%
 A=pd.DataFrame(A)
 A.drop_duplicates(inplace=True)
-st.dataframe(A, hide_index=True)
+#st.dataframe(A, hide_index=True)
+st.table(A)
 #%%     
 
 #%%     
