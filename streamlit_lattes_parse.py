@@ -47,16 +47,16 @@ flag_anonymous=True
 st.header("Universidade Federal de Juiz de Fora")
 
 
-# st.markdown('**Leitura do arquivo XML**')
-# uploaded_file = st.file_uploader(
-#     label=':violet[Escolha o arquivo XML]',
-#     type=['zip'],
-#     accept_multiple_files=False, key='uploaded_file',
-#     label_visibility='hidden',
-#     )
+st.markdown('**Leitura do arquivo XML**')
+uploaded_file = st.file_uploader(
+     label=':violet[Escolha o arquivo XML]',
+     type=['xml'],
+     accept_multiple_files=False, key='uploaded_file',
+     label_visibility='hidden',
+     )
     
-uploaded_file = './data/9030707448549156.zip'
-uploaded_file = './data/9030707448549156.xml'
+#uploaded_file = './data/9030707448549156.zip'
+#uploaded_file = './data/9030707448549156.xml'
 
 A=[]    
 if uploaded_file is not None:
