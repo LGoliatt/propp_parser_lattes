@@ -58,6 +58,7 @@ ano_ref = st.number_input(label="Entre com o ano de referência",
                 min_value=1980, max_value=2024, value=2021, 
                 step=1, format="%d")  
 
+qualis=read_qualis()
 #uploaded_file = './data/9030707448549156.zip'
 #uploaded_file = './data/9030707448549156.xml'
 #%%
@@ -130,17 +131,29 @@ if uploaded_file is not None:
                                                                     
                                 if kk!=None:
                                     titulo=t[kk]
-                              
+                                    
+                                issn=None
+                                issn_qualis=None
+                                if 'ISSN' in aux[1].keys():
+                                    print(aux[1]['ISSN'])
+                                    issn=aux[1]['ISSN']
+                                    try:
+                                        issn_qualis=qualis[issn]
+                                    except:
+                                        pass
+                                    
                                 #st.write('-'*80)
                                 ss='NATUREZA' if 'NATUREZA' in s else 'TIPO'
                                 #st.write(elem.tag, s[ss]) 
                                 #print(elem.tag, t[ss]) 
                                 A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss],
-                                          'ANO':str(ano), 'PONTOS':0,
-                                          'TITULO':titulo})
+                                          'ANO':str(ano), 'ISSN':issn, 
+                                          'ESTRATO':issn_qualis,
+                                          'PONTOS':0, 'TITULO':titulo})
 #%%
 A=pd.DataFrame(A)
 A.drop_duplicates(inplace=True)
+st.table(A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts())
 #st.dataframe(A, hide_index=True)
 st.table(A)
 #%%     
