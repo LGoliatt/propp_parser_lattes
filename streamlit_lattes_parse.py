@@ -102,15 +102,17 @@ if uploaded_file is not None:
                                 #print(ano)
                                 #print(aux[0])            
                                 # st.write(elem.tag, s.keys())
-                                #st.write(s)
+                                l=list(s.keys()); l=l[-1:]+l[:-1]; 
+                                s={k: s[k] for k in l}
+                                st.write(s)
                                 #st.write('-'*80)
                                 ss='NATUREZA' if 'NATUREZA' in s else 'TIPO'
-                                print(elem.tag, s[ss]) 
+                                #st.write(elem.tag, s[ss]) 
                                 A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss]})
 #%%
 A=pd.DataFrame(A)
 A.drop_duplicates(inplace=True)
-st.table(A)
+st.dataframe(A, hide_index=True)
 #%%     
 
 #%%     
