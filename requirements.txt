@@ -1,4 +1,3 @@
-glob3
 os
 re
 glob
