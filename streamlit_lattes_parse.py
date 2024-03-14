@@ -2,8 +2,8 @@
 #%%: streamlit run /home/goliatt/cpa_ufjf/streamlit_app.py 
 import streamlit as st
 import pandas as pd
-import xml
-ET=xml.etree.ElementTree
+import xml.etree.ElementTree as ET
+
 #%%
 ano_ref=2001
 
@@ -105,7 +105,7 @@ if uploaded_file is not None:
                                 #st.write(s)
                                 #st.write('-'*80)
                                 ss='NATUREZA' if 'NATUREZA' in s else 'TIPO'
-                                #st.write(elem.tag, s[ss]) 
+                                print(elem.tag, s[ss]) 
                                 A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss]})
 #%%
 A=pd.DataFrame(A)
