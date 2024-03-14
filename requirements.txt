@@ -1,7 +1,5 @@
-os
-re
 xml
-numpy
 pandas
 matplotlib
 streamlit
+numpy
