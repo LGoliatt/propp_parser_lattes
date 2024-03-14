@@ -5,7 +5,6 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 
 #%%
-ano_ref=2001
 
 #%%
 def get_attr(xml):
@@ -54,8 +53,12 @@ uploaded_file = st.file_uploader(
      accept_multiple_files=False, key='uploaded_file',
      label_visibility='hidden',
      )
-    
-#uploaded_file = './data/9030707448549156.zip'
+ 
+ano_ref = st.number_input(label="Entre com o ano de referência",
+                min_value=1980, max_value=2024, value=2021, 
+                step=1, format="%d")  
+
+    #uploaded_file = './data/9030707448549156.zip'
 #uploaded_file = './data/9030707448549156.xml'
 
 A=[]    
