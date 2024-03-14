@@ -7,9 +7,9 @@ import xml.etree.ElementTree as ET
 #%%
 
 #%%
-def get_attr(xml):
+def get_attr(xmldata):
     attributes = []
-    for child in (xml):
+    for child in (xmldata):
         if len(child.attrib)!= 0:
             attributes.append(child.attrib)
     
@@ -35,7 +35,7 @@ def read_tags():
     tags = pd.read_csv(link, sep=',')
     
     idx=[i=='Sim' for i in  tags['Contabilizar'].values]
-    list_tags = tags['Tag'][idx].values
+    list_tags = list(tags['Tag'][idx].values)
 
     return list_tags
 #%% page setup
@@ -58,9 +58,9 @@ ano_ref = st.number_input(label="Entre com o ano de referência",
                 min_value=1980, max_value=2024, value=2021, 
                 step=1, format="%d")  
 
-    #uploaded_file = './data/9030707448549156.zip'
+#uploaded_file = './data/9030707448549156.zip'
 #uploaded_file = './data/9030707448549156.xml'
-
+#%%
 A=[]    
 if uploaded_file is not None:
     # Read the uploaded file content
@@ -75,19 +75,31 @@ if uploaded_file is not None:
     
     xmlTree = ET.parse(uploaded_file)
 
+    dados_gerais = []
+    root=xmlTree.getroot()
+    for child in (root):
+        if len(child.attrib)!= 0:
+            dados_gerais.append(child.attrib)
+
+    nome_completo=dados_gerais[0]['NOME-COMPLETO']    
+    orcid_id=dados_gerais[0]['ORCID-ID']    
+
+    st.metric(label="Nome", value=nome_completo, delta=orcid_id)
     with st.status("Buscando lista de tags..."):
         st.write("Fazendo download das tags...")
         list_tags = read_tags()
         st.write("Tags atualizadas...")
         
-    
+        #list_tags=['CURRICULO-VITAE',]
     for elem in xmlTree.iter():
         if elem.tag in list_tags:   
+            print(elem.tag, end='\t')
             attributes = get_attr(elem)
             if len(attributes)>0:
                 aux=attributes
                 aux[0]['TIPO-PRODUCAO']=elem.tag
                 #st.write(aux)
+                print(aux)
                 #json_string = json.dumps(aux,indent=True)
                 #print(elem.tag, len(aux),aux[0])
                 #aux[0]['ANO-DO-ARTIGO']
@@ -111,6 +123,7 @@ if uploaded_file is not None:
                                 #st.write('-'*80)
                                 ss='NATUREZA' if 'NATUREZA' in s else 'TIPO'
                                 #st.write(elem.tag, s[ss]) 
+                                print(elem.tag, s[ss]) 
                                 A.append({'TIPO-PRODUCAO':elem.tag, 'NATUREZA':s[ss]})
 #%%
 A=pd.DataFrame(A)
