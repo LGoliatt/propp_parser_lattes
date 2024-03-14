@@ -78,7 +78,7 @@ def read_tags():
 def get_properties(tag,attributes,ref):
     
     if tag=='ARTIGO-PUBLICADO':
-        print(tag)
+        #print(tag)
         natureza=attributes[0]['NATUREZA']
         issn=attributes[1]['ISSN']
         issn_qualis=qualis.get(issn)
@@ -93,7 +93,7 @@ def get_properties(tag,attributes,ref):
                 'PONTOS':0, 'TITULO':titulo}
     
     if tag=='TRABALHO-EM-EVENTOS':
-        print(tag)
+        #print(tag)
         natureza=attributes[0]['NATUREZA']
         ano=attributes[0]['ANO-DO-TRABALHO']
         titulo=attributes[0]['TITULO-DO-TRABALHO']
@@ -115,7 +115,7 @@ def get_properties(tag,attributes,ref):
                 'PONTOS':0, 'TITULO':titulo}
     
     if tag=='PATENTE':
-        print(tag)
+        #print(tag)
         natureza=attributes[1]['CATEGORIA']
         ano=attributes[0]['ANO-DESENVOLVIMENTO']
         titulo=attributes[0]['TITULO']
@@ -126,7 +126,7 @@ def get_properties(tag,attributes,ref):
                 'PONTOS':0, 'TITULO':titulo}
     
     if tag=='PRODUCAO-ARTISTICA-CULTURAL':
-        print(tag)
+        #print(tag)
         natureza=attributes[1]['CATEGORIA']
         ano=attributes[0]['ANO-DESENVOLVIMENTO']
         titulo=attributes[0]['TITULO']
@@ -165,7 +165,7 @@ qualis=read_qualis()
 #uploaded_file = 'data/xml_cvbase_src_main_resources_CurriculoLattes.xsd'
 #uploaded_file = '/home/goliatt/Downloads/6885901755516721.xml'
 #uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
-#       uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
+#uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
 
 #%%
 A=[]    
@@ -217,6 +217,8 @@ if uploaded_file is not None:
     "TEXTOS-EM-JORNAIS-OU-REVISTAS",
     "DEMAIS-TIPOS-DE-PRODUCAO-BIBLIOGRAFICA",
     "ARTIGOS-ACEITOS-PARA-PUBLICACAO",
+    "LIVROS-PUBLICADOS-OU-ORGANIZADOS", 
+    'CAPITULOS-DE-LIVROS-PUBLICADOS'
     # -- SEGMENTO DE OUTRA PRODUCAO
     "PRODUCAO-ARTISTICA-CULTURAL",
     "ORIENTACOES-CONCLUIDAS",
@@ -231,14 +233,16 @@ if uploaded_file is not None:
     #"INFORMACOES-ADICIONAIS-CURSOS",
     ]
     
-   
+    #list_tags=['CAPITULOS-DE-LIVROS-PUBLICADOS']
     for elem in xmlTree.iter():
+        
         #print(elem.tag, end='\t\t')
+            
         #attributes = get_attr(elem)
         #if 'PAT' in elem.tag:
         #    print(elem.tag,elem.getchildren())        
         
-        if elem.tag in list_tags:   
+        if elem.tag in list_tags:               
             attributes = get_attr(elem)
             #print(attributes)
             if len(attributes)>0:
@@ -246,17 +250,20 @@ if uploaded_file is not None:
                 if len(elem.items())!=0:
                     line=get_properties(elem.tag, attributes, ano_ref)              
                     A.append(line)
+                    #print(elem.tag)
                 else:
                     for e in elem:
                         attribute = get_attr(e)
                         #print(f"{elem.tag} \t\t--\t {e.tag}")
                         line=get_properties(e.tag, attribute, ano_ref)              
                         A.append(line)
+                        #print(e.tag)
+                        
                     
                 #line=get_properties(elem.tag, attributes, ano_ref)
                 #A.append(line)
                 
-#%%
+
     A=pd.DataFrame(A)
     A.dropna(inplace=True,how='all')
     A.drop_duplicates(inplace=True)
