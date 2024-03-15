@@ -147,16 +147,41 @@ def get_properties(tag,attributes,ref):
         return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
                 'PONTOS':0, 'TITULO':titulo}
     
-    # if tag=='PRODUCAO-ARTISTICA-CULTURAL':
-    #     #print(tag)
-    #     natureza=attributes[1]['CATEGORIA']
-    #     ano=attributes[0]['ANO-DESENVOLVIMENTO']
-    #     titulo=attributes[0]['TITULO']
-    #     if int(ano)<int(ref):
-    #         return {}
+    if (
+                tag=="ORIENTACOES-CONCLUIDAS-PARA-MESTRADO"
+            or tag=="ORIENTACOES-CONCLUIDAS-PARA-DOUTORADO"
+            or tag=="ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO"
+            or tag=="OUTRAS-ORIENTACOES-CONCLUIDAS"
+            or tag=="OUTRAS-ORIENTACOES-CONCLUIDAS"
+        ):
+        #print(tag)
+        natureza=attributes[0]['NATUREZA']
+        ano=attributes[0]['ANO']
+        titulo=attributes[0]['TITULO']
+        if int(ano)<int(ref):
+            return {}
         
-    #     return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
-    #             'PONTOS':0, 'TITULO':titulo}
+        return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
+                'PONTOS':0, 'TITULO':titulo}
+
+    if (            
+                tag=="ORIENTACAO-EM-ANDAMENTO-DE-MESTRADO"
+            or tag=="ORIENTACAO-EM-ANDAMENTO-DE-DOUTORADO"
+            or tag=="ORIENTACAO-EM-ANDAMENTO-DE-POS-DOUTORADO"
+            or tag=="ORIENTACAO-EM-ANDAMENTO-DE-APERFEICOAMENTO-ESPECIALIZACAO"
+            or tag=="ORIENTACAO-EM-ANDAMENTO-DE-GRADUACAO"
+            or tag=="ORIENTACAO-EM-ANDAMENTO-DE-INICIACAO-CIENTIFICA"
+            or tag=="OUTRAS-ORIENTACOES-EM-ANDAMENTO"
+        ):
+        #print('**',tag)
+        natureza=attributes[0]['NATUREZA']
+        ano=attributes[0]['ANO']
+        titulo=attributes[0]['TITULO-DO-TRABALHO']
+        if int(ano)<int(ref):
+            return {}
+        
+        return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
+                'PONTOS':0, 'TITULO':titulo}
 
     if (
                tag=="APRESENTACAO-DE-OBRA-ARTISTICA"
@@ -184,7 +209,7 @@ def get_properties(tag,attributes,ref):
             or tag=="MIDIA-SOCIAL-WEBSITE-BLOG"
             or tag=="OUTRA-PRODUCAO-TECNICA"
         ):
-        print('**',tag)
+        #print('**',tag)
         natureza=attributes[0]['NATUREZA']
         ano=attributes[0]['ANO']
         titulo=attributes[0]['TITULO']
@@ -225,7 +250,7 @@ qualis=read_qualis()
 #uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
 #uploaded_file = '/home/goliatt/Downloads/3989205395911026.xml'
 #uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
-uploaded_file = '/home/goliatt/Downloads/3987257122606257.xml'
+#uploaded_file = '/home/goliatt/Downloads/3987257122606257.xml'
 
 #%%
 A=[]    
@@ -252,10 +277,10 @@ if uploaded_file is not None:
     orcid_id=dados_gerais[0]['ORCID-ID']    
 
     st.metric(label="Nome", value=nome_completo, delta=orcid_id)
-    with st.status("Buscando lista de tags..."):
-        st.write("Fazendo download das tags...")
-        list_tags = read_tags()
-        st.write("Tags atualizadas...")
+    # with st.status("Buscando lista de tags..."):
+    #     st.write("Fazendo download das tags...")
+    #     list_tags = read_tags()
+    #     st.write("Tags atualizadas...")
         
     list_tags=[
     # -- SEGMENTO DA PRODUCAO TECNICA
@@ -268,7 +293,7 @@ if uploaded_file is not None:
     "TOPOGRAFIA-DE-CIRCUITO-INTEGRADO",
     "PRODUTO-TECNOLOGICO",
     "PROCESSOS-OU-TECNICAS",
-     "TRABALHO-TECNICO",
+    "TRABALHO-TECNICO",
     "DEMAIS-TIPOS-DE-PRODUCAO-TECNICA",
     # -- SEGMENTO DA PRODUCAO BIBLIOGRAFICA
     "TRABALHOS-EM-EVENTOS",
@@ -284,7 +309,7 @@ if uploaded_file is not None:
     "ORIENTACOES-CONCLUIDAS",   
     #"DEMAIS-TRABALHOS",
     # -- SEGMENTO DE DADOS-COMPLEMENTARES
-    #"FORMACAO-COMPLEMENTAR",
+    "FORMACAO-COMPLEMENTAR",
     "PARTICIPACAO-EM-BANCA-TRABALHOS-CONCLUSAO",
     "PARTICIPACAO-EM-BANCA-JULGADORA",
     "PARTICIPACAO-EM-EVENTOS-CONGRESSOS",
@@ -293,9 +318,9 @@ if uploaded_file is not None:
     #"INFORMACOES-ADICIONAIS-CURSOS",
     ]
     
-    #list_tags=[
-    #    #'PRODUCAO-ARTISTICA-CULTURAL',        
-    #    ]
+    # list_tags=[
+    #     'ORIENTACOES-EM-ANDAMENTO',
+    #     ]
     for elem in xmlTree.iter():
         
         #print(elem.tag, end='\t\t')
