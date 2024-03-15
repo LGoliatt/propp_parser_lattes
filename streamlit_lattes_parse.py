@@ -104,10 +104,21 @@ def get_properties(tag,attributes,ref):
                 'PONTOS':0, 'TITULO':titulo}
     
     if tag=='CAPITULO-DE-LIVRO-PUBLICADO':
-        print(tag)
+        #print(tag)
         natureza=attributes[0]['TIPO']
         ano=attributes[0]['ANO']
         titulo=attributes[0]['TITULO-DO-CAPITULO-DO-LIVRO']
+        if int(ano)<int(ref):
+            return {}
+        
+        return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
+                'PONTOS':0, 'TITULO':titulo}
+    
+    if tag=='LIVRO-PUBLICADO-OU-ORGANIZADO':
+        #print(tag)
+        natureza=attributes[0]['TIPO']
+        ano=attributes[0]['ANO']
+        titulo=attributes[0]['TITULO-DO-LIVRO']
         if int(ano)<int(ref):
             return {}
         
@@ -125,10 +136,44 @@ def get_properties(tag,attributes,ref):
         return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
                 'PONTOS':0, 'TITULO':titulo}
     
-    if tag=='PRODUCAO-ARTISTICA-CULTURAL':
+    if tag=='SOFTWARE':
         #print(tag)
-        natureza=attributes[1]['CATEGORIA']
-        ano=attributes[0]['ANO-DESENVOLVIMENTO']
+        natureza=attributes[0]['NATUREZA']
+        ano=attributes[0]['ANO']
+        titulo=attributes[0]['TITULO-DO-SOFTWARE']
+        if int(ano)<int(ref):
+            return {}
+        
+        return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
+                'PONTOS':0, 'TITULO':titulo}
+    
+    # if tag=='PRODUCAO-ARTISTICA-CULTURAL':
+    #     #print(tag)
+    #     natureza=attributes[1]['CATEGORIA']
+    #     ano=attributes[0]['ANO-DESENVOLVIMENTO']
+    #     titulo=attributes[0]['TITULO']
+    #     if int(ano)<int(ref):
+    #         return {}
+        
+    #     return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
+    #             'PONTOS':0, 'TITULO':titulo}
+
+    if (
+               tag=="APRESENTACAO-DE-OBRA-ARTISTICA"
+            or tag=="APRESENTACAO-EM-RADIO-OU-TV"
+            or tag=="ARRANJO-MUSICAL"
+            or tag=="COMPOSICAO-MUSICAL"
+            or tag=="CURSO-DE-CURTA-DURACAO"
+            or tag=="OBRA-DE-ARTES-VISUAIS"
+            or tag=="OUTRA-PRODUCAO-ARTISTICA-CULTURAL"
+            or tag=="SONOPLASTIA"
+            or tag=="ARTES-CENICAS"
+            or tag=="ARTES-VISUAIS"
+            or tag=="MUSICA"
+        ):
+        #print(tag)
+        natureza=attributes[0]['NATUREZA']
+        ano=attributes[0]['ANO']
         titulo=attributes[0]['TITULO']
         if int(ano)<int(ref):
             return {}
@@ -156,7 +201,7 @@ uploaded_file = st.file_uploader(
      )
 
 ano_ref = st.number_input(label="Entre com o ano de referência",
-                min_value=1980, max_value=2024, value=2021, 
+                min_value=1980, max_value=2024, value=1980, 
                 step=1, format="%d")  
 
 qualis=read_qualis()
@@ -164,8 +209,9 @@ qualis=read_qualis()
 #uploaded_file = './data/9030707448549156.xml'
 #uploaded_file = 'data/xml_cvbase_src_main_resources_CurriculoLattes.xsd'
 #uploaded_file = '/home/goliatt/Downloads/6885901755516721.xml'
-#uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
 #uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
+#uploaded_file = '/home/goliatt/Downloads/3989205395911026.xml'
+#uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
 
 #%%
 A=[]    
@@ -217,11 +263,11 @@ if uploaded_file is not None:
     "TEXTOS-EM-JORNAIS-OU-REVISTAS",
     "DEMAIS-TIPOS-DE-PRODUCAO-BIBLIOGRAFICA",
     "ARTIGOS-ACEITOS-PARA-PUBLICACAO",
-    "LIVROS-PUBLICADOS-OU-ORGANIZADOS", 
-    'CAPITULOS-DE-LIVROS-PUBLICADOS',
+    "LIVROS-PUBLICADOS-OU-ORGANIZADOS",
+    "CAPITULOS-DE-LIVROS-PUBLICADOS",
     # -- SEGMENTO DE OUTRA PRODUCAO
     "PRODUCAO-ARTISTICA-CULTURAL",
-    "ORIENTACOES-CONCLUIDAS",
+    "ORIENTACOES-CONCLUIDAS",   
     #"DEMAIS-TRABALHOS",
     # -- SEGMENTO DE DADOS-COMPLEMENTARES
     #"FORMACAO-COMPLEMENTAR",
@@ -233,7 +279,9 @@ if uploaded_file is not None:
     #"INFORMACOES-ADICIONAIS-CURSOS",
     ]
     
-    #list_tags=['CAPITULOS-DE-LIVROS-PUBLICADOS']
+    #list_tags=[
+    #    #'PRODUCAO-ARTISTICA-CULTURAL',        
+    #    ]
     for elem in xmlTree.iter():
         
         #print(elem.tag, end='\t\t')
@@ -246,18 +294,20 @@ if uploaded_file is not None:
             attributes = get_attr(elem)
             #print(attributes)
             if len(attributes)>0:
-                attributes[0]['TIPO-PRODUCAO']=elem.tag
+                #attributes[0]['TIPO-PRODUCAO']=elem.tag
                 if len(elem.items())!=0:
                     line=get_properties(elem.tag, attributes, ano_ref)              
                     A.append(line)
-                    #print(elem.tag)
+                    print(elem.tag)
                 else:
                     for e in elem:
                         attribute = get_attr(e)
+                        #attribute[0]['TIPO-PRODUCAO']=e.tag
+                        #print(attribute)
                         #print(f"{elem.tag} \t\t--\t {e.tag}")
                         line=get_properties(e.tag, attribute, ano_ref)              
                         A.append(line)
-                        print(e.tag)
+                        #print(e.tag)
                         
                     
                 #line=get_properties(elem.tag, attributes, ano_ref)
