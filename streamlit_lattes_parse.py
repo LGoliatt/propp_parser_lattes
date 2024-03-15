@@ -170,8 +170,21 @@ def get_properties(tag,attributes,ref):
             or tag=="ARTES-CENICAS"
             or tag=="ARTES-VISUAIS"
             or tag=="MUSICA"
+            #
+            or tag=="APRESENTACAO-DE-TRABALHO"
+            or tag=="CARTA-MAPA-OU-SIMILAR"
+            #or tag=="CURSO-DE-CURTA-DURACAO-MINISTRADO"
+            or tag=="DESENVOLVIMENTO-DE-MATERIAL-DIDATICO-OU-INSTRUCIONAL"
+            or tag=="EDITORACAO"
+            or tag=="MANUTENCAO-DE-OBRA-ARTISTICA"
+            or tag=="MAQUETE"
+            or tag=="ORGANIZACAO-DE-EVENTO"
+            or tag=="PROGRAMA-DE-RADIO-OU-TV"
+            or tag=="RELATORIO-DE-PESQUISA"
+            or tag=="MIDIA-SOCIAL-WEBSITE-BLOG"
+            or tag=="OUTRA-PRODUCAO-TECNICA"
         ):
-        #print(tag)
+        print('**',tag)
         natureza=attributes[0]['NATUREZA']
         ano=attributes[0]['ANO']
         titulo=attributes[0]['TITULO']
@@ -212,6 +225,7 @@ qualis=read_qualis()
 #uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
 #uploaded_file = '/home/goliatt/Downloads/3989205395911026.xml'
 #uploaded_file = '/home/goliatt/Downloads/5673981788072449.xml'
+uploaded_file = '/home/goliatt/Downloads/3987257122606257.xml'
 
 #%%
 A=[]    
@@ -254,7 +268,7 @@ if uploaded_file is not None:
     "TOPOGRAFIA-DE-CIRCUITO-INTEGRADO",
     "PRODUTO-TECNOLOGICO",
     "PROCESSOS-OU-TECNICAS",
-     #"TRABALHO-TECNICO",
+     "TRABALHO-TECNICO",
     "DEMAIS-TIPOS-DE-PRODUCAO-TECNICA",
     # -- SEGMENTO DA PRODUCAO BIBLIOGRAFICA
     "TRABALHOS-EM-EVENTOS",
@@ -307,7 +321,7 @@ if uploaded_file is not None:
                         #print(f"{elem.tag} \t\t--\t {e.tag}")
                         line=get_properties(e.tag, attribute, ano_ref)              
                         A.append(line)
-                        #print(e.tag)
+                        print(e.tag)
                         
                     
                 #line=get_properties(elem.tag, attributes, ano_ref)
