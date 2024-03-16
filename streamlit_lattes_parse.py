@@ -125,8 +125,20 @@ def get_properties(tag,attributes,ref):
         return {'TIPO-PRODUCAO':tag, 'NATUREZA':natureza,'ANO':ano, 
                 'PONTOS':0, 'TITULO':titulo}
     
-    if tag=='PATENTE':
-        #print(tag)
+    if (
+                tag=="PATENTE"
+            or tag=="CULTIVAR-REGISTRADA"
+            #or tag=="SOFTWARE"
+            or tag=="CULTIVAR-PROTEGIDA"
+            or tag=="DESENHO-INDUSTRIAL"
+            or tag=="MARCA"
+            or tag=="TOPOGRAFIA-DE-CIRCUITO-INTEGRADO"
+            #or tag=="PRODUTO-TECNOLOGICO"
+            #or tag=="PROCESSOS-OU-TECNICAS"
+            #or tag=="TRABALHO-TECNICO"
+            #or tag=="DEMAIS-TIPOS-DE-PRODUCAO-TECNICA"
+        ):
+        print(tag)
         natureza=attributes[1]['CATEGORIA']
         ano=attributes[0]['ANO-DESENVOLVIMENTO']
         titulo=attributes[0]['TITULO']
@@ -221,6 +233,10 @@ def get_properties(tag,attributes,ref):
     else:
         return {}
     
+@st.cache_data
+def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv(index=False, sep=';').encode('utf-8')
     
 #%% page setup
 st.set_page_config(layout="wide")  # this needs to be the first Streamlit command
@@ -318,8 +334,8 @@ if uploaded_file is not None:
     #"INFORMACOES-ADICIONAIS-CURSOS",
     ]
     
-    # list_tags=[
-    #     'ORIENTACOES-EM-ANDAMENTO',
+    #list_tags=[
+    #     'PRODUCAO-TECNICA',
     #     ]
     for elem in xmlTree.iter():
         
@@ -337,7 +353,7 @@ if uploaded_file is not None:
                 if len(elem.items())!=0:
                     line=get_properties(elem.tag, attributes, ano_ref)              
                     A.append(line)
-                    print(elem.tag)
+                    #print(elem.tag)
                 else:
                     for e in elem:
                         attribute = get_attr(e)
@@ -357,8 +373,16 @@ if uploaded_file is not None:
     A.dropna(inplace=True,how='all')
     A.drop_duplicates(inplace=True)
     B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
-    st.table(B)
+    csv = convert_df(A)
+
+    st.download_button(
+        label="Baixar planilha detalhada em formato csv",
+        data=csv,
+        file_name=nome_completo.lower().replace(' ','_')+'.csv',
+        mime='text/csv',
+    )
     #st.dataframe(A, hide_index=True)
+    st.table(B)
     st.table(A)
 #%%     
 
