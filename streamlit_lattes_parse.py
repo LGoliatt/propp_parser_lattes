@@ -345,7 +345,7 @@ if uploaded_file is not None:
         #if 'PAT' in elem.tag:
         #    print(elem.tag,elem.getchildren())        
         
-        if elem.tag in list_tags:               
+        #if elem.tag in list_tags:               
             attributes = get_attr(elem)
             #print(attributes)
             if len(attributes)>0:
