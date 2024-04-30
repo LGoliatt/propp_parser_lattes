@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 import xml.etree.ElementTree as ET
+import datetime
 
 #%%
 
@@ -67,13 +68,16 @@ def read_qualis(fn='./qualis/qualis.csv'):
 def read_tags():
     
     key='1U7K2TGPz6YPLJPKgjOp-io0an94dSVQvtq9-lttYH4M'
-    link='https://docs.google.com/spreadsheet/ccc?key='+key+'&output=csv'
+    link='https://docs.google.com/spreadsheet/ccc?key='+key+'&output=csv'    
     tags = pd.read_csv(link, sep=',')
     
     idx=[i=='Sim' for i in  tags['Contabilizar'].values]
     list_tags = list(tags['Tag'][idx].values)
-
-    return list_tags
+    list_area = list(tags.columns.drop(['Tag', 'Contabilizar'], ))
+    list_thre = []
+    comites = [j for j in [i if 'COMIT' in i else None for i in tags.columns] if j is not None]
+    satura = [j for j in [i if 'SATURA' in i else None for i in tags.columns] if j is not None]
+    return list_tags, list_area, list_thre, comites, satura
 
 def get_properties(tag,attributes,ref):
     
@@ -254,8 +258,18 @@ uploaded_file = st.file_uploader(
      #label_visibility='hidden',
      )
 
+list_tags, list_area, list_thre, comites, satura = read_tags()
+option_comite = st.selectbox(
+            "Selecione a área ou comitê de pesquisa",
+            comites,
+            index=None,
+            placeholder="...",
+        ) 
+
+today = datetime.date.today()
+year = today.year
 ano_ref = st.number_input(label="Entre com o ano de referência",
-                min_value=1980, max_value=2024, value=1980, 
+                min_value=1980, max_value=year, value=year-4, 
                 step=1, format="%d")  
 
 qualis=read_qualis()
@@ -269,6 +283,7 @@ qualis=read_qualis()
 #uploaded_file = '/home/goliatt/Downloads/3987257122606257.xml'
 
 #%%
+
 A=[]    
 if uploaded_file is not None:
     # Read the uploaded file content
@@ -294,96 +309,106 @@ if uploaded_file is not None:
 
     st.metric(label="Nome", value=nome_completo, delta=orcid_id)
     # with st.status("Buscando lista de tags..."):
-    #     st.write("Fazendo download das tags...")
-    #     list_tags = read_tags()
-    #     st.write("Tags atualizadas...")
+    #      st.write("Fazendo download das tags...")
+    #      list_tags, list_area, list_thre = read_tags()
+    #      st.write("Tags atualizadas...")
+         
+         
+    option_area = st.selectbox(
+               "Selecione a área ou comitê de pesquisa",
+               list_area,
+               index=None,
+               placeholder="...",
+           )
+
+    if option_comite is not None:
+
+        list_tags=[
+        # -- SEGMENTO DA PRODUCAO TECNICA
+        "CULTIVAR-REGISTRADA",
+        "SOFTWARE",
+        "PATENTE",
+        "CULTIVAR-PROTEGIDA",
+        "DESENHO-INDUSTRIAL",
+        "MARCA",
+        "TOPOGRAFIA-DE-CIRCUITO-INTEGRADO",
+        "PRODUTO-TECNOLOGICO",
+        "PROCESSOS-OU-TECNICAS",
+        "TRABALHO-TECNICO",
+        "DEMAIS-TIPOS-DE-PRODUCAO-TECNICA",
+        # -- SEGMENTO DA PRODUCAO BIBLIOGRAFICA
+        "TRABALHOS-EM-EVENTOS",
+        "ARTIGOS-PUBLICADOS",
+        "LIVROS-E-CAPITULOS",
+        "TEXTOS-EM-JORNAIS-OU-REVISTAS",
+        "DEMAIS-TIPOS-DE-PRODUCAO-BIBLIOGRAFICA",
+        "ARTIGOS-ACEITOS-PARA-PUBLICACAO",
+        "LIVROS-PUBLICADOS-OU-ORGANIZADOS",
+        "CAPITULOS-DE-LIVROS-PUBLICADOS",
+        # -- SEGMENTO DE OUTRA PRODUCAO
+        "PRODUCAO-ARTISTICA-CULTURAL",
+        "ORIENTACOES-CONCLUIDAS",   
+        #"DEMAIS-TRABALHOS",
+        # -- SEGMENTO DE DADOS-COMPLEMENTARES
+        "FORMACAO-COMPLEMENTAR",
+        "PARTICIPACAO-EM-BANCA-TRABALHOS-CONCLUSAO",
+        "PARTICIPACAO-EM-BANCA-JULGADORA",
+        "PARTICIPACAO-EM-EVENTOS-CONGRESSOS",
+        "ORIENTACOES-EM-ANDAMENTO",
+        #"INFORMACOES-ADICIONAIS-INSTITUICOES",
+        #"INFORMACOES-ADICIONAIS-CURSOS",
+        ]
         
-    list_tags=[
-    # -- SEGMENTO DA PRODUCAO TECNICA
-    "CULTIVAR-REGISTRADA",
-    "SOFTWARE",
-    "PATENTE",
-    "CULTIVAR-PROTEGIDA",
-    "DESENHO-INDUSTRIAL",
-    "MARCA",
-    "TOPOGRAFIA-DE-CIRCUITO-INTEGRADO",
-    "PRODUTO-TECNOLOGICO",
-    "PROCESSOS-OU-TECNICAS",
-    "TRABALHO-TECNICO",
-    "DEMAIS-TIPOS-DE-PRODUCAO-TECNICA",
-    # -- SEGMENTO DA PRODUCAO BIBLIOGRAFICA
-    "TRABALHOS-EM-EVENTOS",
-    "ARTIGOS-PUBLICADOS",
-    "LIVROS-E-CAPITULOS",
-    "TEXTOS-EM-JORNAIS-OU-REVISTAS",
-    "DEMAIS-TIPOS-DE-PRODUCAO-BIBLIOGRAFICA",
-    "ARTIGOS-ACEITOS-PARA-PUBLICACAO",
-    "LIVROS-PUBLICADOS-OU-ORGANIZADOS",
-    "CAPITULOS-DE-LIVROS-PUBLICADOS",
-    # -- SEGMENTO DE OUTRA PRODUCAO
-    "PRODUCAO-ARTISTICA-CULTURAL",
-    "ORIENTACOES-CONCLUIDAS",   
-    #"DEMAIS-TRABALHOS",
-    # -- SEGMENTO DE DADOS-COMPLEMENTARES
-    "FORMACAO-COMPLEMENTAR",
-    "PARTICIPACAO-EM-BANCA-TRABALHOS-CONCLUSAO",
-    "PARTICIPACAO-EM-BANCA-JULGADORA",
-    "PARTICIPACAO-EM-EVENTOS-CONGRESSOS",
-    "ORIENTACOES-EM-ANDAMENTO",
-    #"INFORMACOES-ADICIONAIS-INSTITUICOES",
-    #"INFORMACOES-ADICIONAIS-CURSOS",
-    ]
-    
-    #list_tags=[
-    #     'PRODUCAO-TECNICA',
-    #     ]
-    for elem in xmlTree.iter():
-        
-        #print(elem.tag, end='\t\t')
+        #list_tags=[
+        #     'PRODUCAO-TECNICA',
+        #     ]
+        for elem in xmlTree.iter():
             
-        #attributes = get_attr(elem)
-        #if 'PAT' in elem.tag:
-        #    print(elem.tag,elem.getchildren())        
-        
-        #if elem.tag in list_tags:               
-            attributes = get_attr(elem)
-            #print(attributes)
-            if len(attributes)>0:
-                #attributes[0]['TIPO-PRODUCAO']=elem.tag
-                if len(elem.items())!=0:
-                    line=get_properties(elem.tag, attributes, ano_ref)              
-                    A.append(line)
-                    #print(elem.tag)
-                else:
-                    for e in elem:
-                        attribute = get_attr(e)
-                        #attribute[0]['TIPO-PRODUCAO']=e.tag
-                        #print(attribute)
-                        #print(f"{elem.tag} \t\t--\t {e.tag}")
-                        line=get_properties(e.tag, attribute, ano_ref)              
-                        A.append(line)
-                        print(e.tag)
-                        
-                    
-                #line=get_properties(elem.tag, attributes, ano_ref)
-                #A.append(line)
+            #print(elem.tag, end='\t\t')
                 
-
-    A=pd.DataFrame(A)
-    A.dropna(inplace=True,how='all')
-    A.drop_duplicates(inplace=True)
-    B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
-    csv = convert_df(A)
-
-    st.download_button(
-        label="Baixar planilha detalhada em formato csv",
-        data=csv,
-        file_name=nome_completo.lower().replace(' ','_')+'.csv',
-        mime='text/csv',
-    )
-    #st.dataframe(A, hide_index=True)
-    st.table(B)
-    st.table(A)
+            #attributes = get_attr(elem)
+            #if 'PAT' in elem.tag:
+            #    print(elem.tag,elem.getchildren())        
+            
+            #if elem.tag in list_tags:               
+                attributes = get_attr(elem)
+                #print(attributes)
+                if len(attributes)>0:
+                    #attributes[0]['TIPO-PRODUCAO']=elem.tag
+                    if len(elem.items())!=0:
+                        line=get_properties(elem.tag, attributes, ano_ref)              
+                        A.append(line)
+                        #print(elem.tag)
+                    else:
+                        for e in elem:
+                            attribute = get_attr(e)
+                            #attribute[0]['TIPO-PRODUCAO']=e.tag
+                            #print(attribute)
+                            #print(f"{elem.tag} \t\t--\t {e.tag}")
+                            line=get_properties(e.tag, attribute, ano_ref)              
+                            A.append(line)
+                            print(e.tag)
+                            
+                        
+                    #line=get_properties(elem.tag, attributes, ano_ref)
+                    #A.append(line)
+                    
+    
+        A=pd.DataFrame(A)
+        A.dropna(inplace=True,how='all')
+        A.drop_duplicates(inplace=True)
+        B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
+        csv = convert_df(A)
+    
+        st.download_button(
+            label="Baixar planilha detalhada em formato csv",
+            data=csv,
+            file_name=nome_completo.lower().replace(' ','_')+'.csv',
+            mime='text/csv',
+        )
+        #st.dataframe(A, hide_index=True)
+        st.table(B)
+        st.table(A)
 #%%     
 
 #%%     
