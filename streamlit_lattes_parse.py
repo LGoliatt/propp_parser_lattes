@@ -314,12 +314,12 @@ if uploaded_file is not None:
     #      st.write("Tags atualizadas...")
          
          
-    option_area = st.selectbox(
-               "Selecione a área ou comitê de pesquisa",
-               list_area,
-               index=None,
-               placeholder="...",
-           )
+    # option_area = st.selectbox(
+    #            "Selecione a área ou comitê de pesquisa",
+    #            list_area,
+    #            index=None,
+    #            placeholder="...",
+    #        )
 
     if option_comite is not None:
 
