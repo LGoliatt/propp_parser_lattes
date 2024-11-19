@@ -72,7 +72,7 @@ def read_tags():
     tags = pd.read_csv(link, sep=',')
     
     idx=[i=='Sim' for i in  tags['Contabilizar'].values]
-    idx=[True for i in  tags['Contabilizar'].values]
+    #idx=[True for i in  tags['Contabilizar'].values]
     list_tags = list(tags['Tag'][idx].values)
     list_area = list(tags.columns.drop(['Tag', 'Contabilizar'], ))
     list_thre = []
@@ -277,6 +277,7 @@ ano_ref = st.number_input(label="Entre com o ano de referência",
 
 qualis=read_qualis()
 #uploaded_file = './data/9030707448549156.zip'
+
 #uploaded_file = './data/9030707448549156.xml'
 #option_comite='ENGENHARIAS E COMPUTAÇÃO'
 
@@ -335,7 +336,7 @@ if uploaded_file is not None:
         pesos=pesos.fillna(0)
         pesos = dict(zip(list_tags, pesos.values.ravel()))
         
-        list_tags_aux=[
+        list_tags=[
         # -- SEGMENTO DA PRODUCAO TECNICA
         "CULTIVAR-REGISTRADA",
         "SOFTWARE",
@@ -389,7 +390,8 @@ if uploaded_file is not None:
                     #attributes[0]['TIPO-PRODUCAO']=elem.tag
                     if len(elem.items())!=0:
                         line=get_properties(elem.tag, attributes, ano_ref)              
-                        A.append(line)
+                        if len(line)>0:
+                            A.append(line)
                         #print(elem.tag)
                     else:
                         for e in elem:
@@ -397,17 +399,22 @@ if uploaded_file is not None:
                             #attribute[0]['TIPO-PRODUCAO']=e.tag
                             #print(attribute)
                             #print(f"{elem.tag} \t\t--\t {e.tag}")
-                            line=get_properties(e.tag, attribute, ano_ref)              
-                            A.append(line)
-                            print(e.tag)
-                            
+                            line=get_properties(e.tag, attribute, ano_ref)
+                            if len(line)>0:
+                                A.append(line)
+                                print(e.tag)
+                                
                         
                     #line=get_properties(elem.tag, attributes, ano_ref)
                     #A.append(line)
                     
     
-        A=pd.DataFrame(A); A.dropna(inplace=True)
-        A['PONTOS'] = [pesos[i] for i in A['TIPO-PRODUCAO']]
+        A=pd.DataFrame(A); #A.dropna(inplace=True)
+        wp = {w:0 for w in list(A['TIPO-PRODUCAO'].dropna().unique())}
+        for i in pesos:
+            wp[i]=pesos[i] 
+        
+        A['PONTOS'] = [wp[i] for i in A['TIPO-PRODUCAO']]
         
         A.dropna(inplace=True,how='all')
         A.drop_duplicates(inplace=True)
