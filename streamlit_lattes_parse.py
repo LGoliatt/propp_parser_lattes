@@ -399,7 +399,10 @@ if uploaded_file is not None:
         A.drop_duplicates(inplace=True)
         B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
         csv = convert_df(A)
-    
+        
+        pontos=A['PONTOS'].sum()    
+        st.metric(label="Pontuação", value=pontos)
+
         st.download_button(
             label="Baixar planilha detalhada em formato csv",
             data=csv,
