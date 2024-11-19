@@ -272,7 +272,7 @@ option_comite = st.selectbox(
 today = datetime.date.today()
 year = today.year
 ano_ref = st.number_input(label="Entre com o ano de referência",
-                min_value=1980, max_value=year, value=year-4, 
+                min_value=1980, max_value=year, value=year-3, 
                 step=1, format="%d")  
 
 qualis=read_qualis()
