@@ -406,8 +406,8 @@ if uploaded_file is not None:
                     #A.append(line)
                     
     
-        A=pd.DataFrame(A)
-        #A['PONTOS'] = [pesos[i] for i in A['TIPO-PRODUCAO']]
+        A=pd.DataFrame(A); A.dropna(inplace=True)
+        A['PONTOS'] = [pesos[i] for i in A['TIPO-PRODUCAO']]
         
         A.dropna(inplace=True,how='all')
         A.drop_duplicates(inplace=True)
