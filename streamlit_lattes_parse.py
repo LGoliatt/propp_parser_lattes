@@ -335,7 +335,7 @@ if uploaded_file is not None:
         pesos=pesos.fillna(0)
         pesos = dict(zip(list_tags, pesos.values.ravel()))
         
-        list_tags=[
+        list_tags_aux=[
         # -- SEGMENTO DA PRODUCAO TECNICA
         "CULTIVAR-REGISTRADA",
         "SOFTWARE",
@@ -408,6 +408,7 @@ if uploaded_file is not None:
     
         A=pd.DataFrame(A)
         A['PONTOS'] = [pesos[i] for i in A['TIPO-PRODUCAO']]
+        
         A.dropna(inplace=True,how='all')
         A.drop_duplicates(inplace=True)
         B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
