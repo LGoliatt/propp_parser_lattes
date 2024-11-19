@@ -252,6 +252,8 @@ flag_anonymous=True
 #add title
 st.header("Universidade Federal de Juiz de Fora")
 
+# planilha de pontuação
+# https://docs.google.com/spreadsheets/d/1U7K2TGPz6YPLJPKgjOp-io0an94dSVQvtq9-lttYH4M/edit?gid=0#gid=0
 
 st.markdown('**Leitura do arquivo XML**')
 uploaded_file = st.file_uploader(
