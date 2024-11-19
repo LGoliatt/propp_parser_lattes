@@ -72,12 +72,15 @@ def read_tags():
     tags = pd.read_csv(link, sep=',')
     
     idx=[i=='Sim' for i in  tags['Contabilizar'].values]
+    idx=[True for i in  tags['Contabilizar'].values]
     list_tags = list(tags['Tag'][idx].values)
     list_area = list(tags.columns.drop(['Tag', 'Contabilizar'], ))
     list_thre = []
     comites = [j for j in [i if 'COMIT' in i else None for i in tags.columns] if j is not None]
     satura = [j for j in [i if 'SATURA' in i else None for i in tags.columns] if j is not None]
-    return list_tags, list_area, list_thre, comites, satura
+    tags = tags[idx]
+    return list_tags, list_area, list_thre, comites, satura, tags
+
 
 def get_properties(tag,attributes,ref):
     
@@ -258,7 +261,7 @@ uploaded_file = st.file_uploader(
      #label_visibility='hidden',
      )
 
-list_tags, list_area, list_thre, comites, satura = read_tags()
+list_tags, list_area, list_thre, comites, satura, tags = read_tags()
 option_comite = st.selectbox(
             "Selecione a área ou comitê de pesquisa",
             comites,
@@ -275,6 +278,8 @@ ano_ref = st.number_input(label="Entre com o ano de referência",
 qualis=read_qualis()
 #uploaded_file = './data/9030707448549156.zip'
 #uploaded_file = './data/9030707448549156.xml'
+#option_comite='ENGENHARIAS E COMPUTAÇÃO'
+
 #uploaded_file = 'data/xml_cvbase_src_main_resources_CurriculoLattes.xsd'
 #uploaded_file = '/home/goliatt/Downloads/6885901755516721.xml'
 #uploaded_file = '/home/goliatt/Downloads/0633665122312619.xml'
@@ -306,7 +311,7 @@ if uploaded_file is not None:
 
     nome_completo=dados_gerais[0]['NOME-COMPLETO']    
     orcid_id=dados_gerais[0]['ORCID-ID']    
-
+    
     st.metric(label="Nome", value=nome_completo, delta=orcid_id)
     # with st.status("Buscando lista de tags..."):
     #      st.write("Fazendo download das tags...")
@@ -323,6 +328,13 @@ if uploaded_file is not None:
 
     if option_comite is not None:
 
+        cc=[option_comite in i for i in tags.columns]
+        ccc=['COMI' in i for i in tags.columns[cc]]
+        pesos = tags.columns[cc][ccc]
+        pesos = tags[pesos]
+        pesos=pesos.fillna(0)
+        pesos = dict(zip(list_tags, pesos.values.ravel()))
+        
         list_tags=[
         # -- SEGMENTO DA PRODUCAO TECNICA
         "CULTIVAR-REGISTRADA",
@@ -395,6 +407,7 @@ if uploaded_file is not None:
                     
     
         A=pd.DataFrame(A)
+        A['PONTOS'] = [pesos[i] for i in A['TIPO-PRODUCAO']]
         A.dropna(inplace=True,how='all')
         A.drop_duplicates(inplace=True)
         B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
@@ -412,6 +425,7 @@ if uploaded_file is not None:
         #st.dataframe(A, hide_index=True)
         st.table(B)
         st.table(A)
+        
 #%%     
 
 #%%     
