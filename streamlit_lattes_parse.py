@@ -419,6 +419,8 @@ if uploaded_file is not None:
         A.dropna(inplace=True,how='all')
         A.drop_duplicates(inplace=True)
         B=A[['TIPO-PRODUCAO', 'NATUREZA',]].value_counts()
+        C=A.groupby(['TIPO-PRODUCAO', 'NATUREZA',]).agg(sum)
+        
         csv = convert_df(A)
         
         pontos=A['PONTOS'].sum()    
