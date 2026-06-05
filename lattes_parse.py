@@ -21,6 +21,9 @@ import pandas as pd
 import streamlit as st
 import xml.etree.ElementTree as ET
 
+USE_LOCAL_TEST_FILE = True
+LOCAL_TEST_FILE = "./data/CV_9030707448549156.zip"
+
 # -----------------------------------------------------------------------------
 # Configuração dos itens contabilizáveis do Lattes
 # -----------------------------------------------------------------------------
@@ -377,73 +380,17 @@ def extract_records(root: ET.Element, ano_ref: int, selected_tags: set[str] | No
     return df.reset_index(drop=True)
 
 
-def summarize_counts(
-            df: pd.DataFrame,
-            pesos_tags: pd.DataFrame
-    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        
+def summarize_counts(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if df.empty:
         empty = pd.DataFrame()
         return empty, empty, empty
-
-    #por_item = (
-    #    df.groupby(["GRUPO", "ITEM"], dropna=False)
-    #    .size()
-    #    .reset_index(name="CONTAGEM")
-    #    .sort_values(["GRUPO", "CONTAGEM", "ITEM"], ascending=[True, False, True])
-    #)
 
     por_item = (
         df.groupby(["GRUPO", "ITEM"], dropna=False)
         .size()
         .reset_index(name="CONTAGEM")
+        .sort_values(["GRUPO", "CONTAGEM", "ITEM"], ascending=[True, False, True])
     )
-
-    # junta pesos
-    por_item = por_item.merge(
-        pesos_tags[["TAG", "PESO", "SAT"]],
-        left_on="ITEM",
-        right_on="TAG",
-        how="left"
-    )
-
-    por_item["PESO"] = (
-        pd.to_numeric(
-            por_item["PESO"],
-            errors="coerce"
-        )
-        .fillna(0)
-    )
-
-    por_item["SAT"] = (
-        pd.to_numeric(
-            por_item["SAT"],
-            errors="coerce"
-        )
-    )
-
-    # frequência efetivamente pontuada
-    por_item["CONTAGEM_PONTUADA"] = por_item.apply(
-        lambda row: min(
-            row["CONTAGEM"],
-            row["SAT"]
-        )
-        if pd.notna(row["SAT"])
-        else row["CONTAGEM"],
-        axis=1
-    )
-
-    # valor final
-    por_item["VALOR"] = (
-        por_item["CONTAGEM_PONTUADA"]
-        * por_item["PESO"]
-    )
-
-    por_item = por_item.sort_values(
-        ["VALOR", "CONTAGEM"],
-        ascending=[False, False]
-    )
-
 
     por_item_natureza = (
         df.groupby(["GRUPO", "ITEM", "NATUREZA"], dropna=False)
@@ -483,25 +430,7 @@ def read_pesos_tags(path: str | Path = "pesos_tags_lattes.csv") -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=["TAG", "PESO", "SAT"])
 
-
-    # ler a planilha como xls
-    sheet_id = "1rW1U0nG9Ua6Y5VOwzWxXfpSaLEKFrUp5XqXwGcuetjw"
-
-    url = (
-        f"https://docs.google.com/spreadsheets/d/"
-        f"{sheet_id}/export?format=xlsx"
-    )
-
-    pesos = pd.read_excel(url)
-
-    pesos = pd.read_excel(
-        url,
-        sheet_name="REF"
-    )
-
-
-    #pesos = pd.read_csv(path, sep=";", encoding="utf-8-sig")
-    #pesos.dropna(inplace=True)
+    pesos = pd.read_csv(path, sep=";", encoding="utf-8-sig")
     pesos.columns = [normalize_space(c).upper() for c in pesos.columns]
 
     if "TAG" not in pesos.columns or "PESO" not in pesos.columns:
@@ -611,6 +540,7 @@ if uploaded_file is not None:
         ident = extract_identification(root)
         df = extract_records(root, int(ano_ref), selected_tags)
 
+        por_item, por_item_natureza, por_ano = summarize_counts(df)
 
         st.subheader("Identificação")
         m1, m2, m3, m4 = st.columns(4)
@@ -664,17 +594,10 @@ if uploaded_file is not None:
         #    .cumsum()
         #)
 
-
-        por_item, por_item_natureza, por_ano = summarize_counts(df, pesos_tags)
-
-
         if df.empty:
             st.warning("Nenhum registro encontrado para os grupos e ano inicial selecionados.")
         else:
             st.subheader("Contagem por item")
-            total_pontos = por_item['VALOR'].sum() 
-            por_item.drop(['TAG'], axis=1, inplace=True)
-            st.metric("Pontuação total ponderada", f"{total_pontos:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             st.dataframe(por_item, use_container_width=True, hide_index=True)
 
             st.subheader("Contagem por item e natureza")
@@ -689,7 +612,7 @@ if uploaded_file is not None:
             st.download_button(
                 "Baixar registros detalhados CSV",
                 data=to_csv_bytes(df),
-                file_name=f"{base_name}_detalhado.csv",  
+                file_name=f"{base_name}_detalhado.csv",
                 mime="text/csv",
             )
             st.download_button(
@@ -699,12 +622,22 @@ if uploaded_file is not None:
                 mime="text/csv",
             )
 
+        st.subheader("Nota ponderada por tag")
+        st.metric("Pontuação total ponderada", f"{total_pontos:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
         if pesos_tags.empty:
             st.warning(
                 "Arquivo pesos_tags_lattes.csv não encontrado no diretório do app. "
                 "A tabela foi calculada com PESO=0 para todas as tags."
             )
+
+        st.dataframe(tabela_pontos, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Baixar pontuação ponderada por tag CSV",
+            data=to_csv_bytes(tabela_pontos),
+            file_name=f"{base_name}_pontuacao_ponderada_por_tag.csv",
+            mime="text/csv",
+        )
 
         with st.expander("Diagnóstico: todas as tags encontradas no XML"):
             st.dataframe(tag_counts, use_container_width=True, hide_index=True)
