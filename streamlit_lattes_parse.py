@@ -14,6 +14,7 @@ import io
 import re
 import zipfile
 from collections import Counter
+from pathlib import Path
 from typing import BinaryIO, Iterable
 
 import pandas as pd
@@ -419,6 +420,76 @@ def format_lattes_date(value: str) -> str:
     return value
 
 
+def read_pesos_tags(path: str | Path = "pesos_tags_lattes.csv") -> pd.DataFrame:
+    """Lê o arquivo de pesos por tag do Lattes.
+
+    O arquivo esperado deve conter, no mínimo, as colunas TAG e PESO.
+    Por padrão, o app procura pesos_tags_lattes.csv no mesmo diretório
+    do script Streamlit. Também aceita caminho absoluto.
+    """
+    path = Path(path)
+    if not path.is_absolute():
+        path = Path(__file__).resolve().parent / path
+
+    if not path.exists():
+        return pd.DataFrame(columns=["TAG", "PESO"])
+
+    pesos = pd.read_csv(path, sep=";", encoding="utf-8-sig")
+    pesos.columns = [normalize_space(c).upper() for c in pesos.columns]
+
+    if "TAG" not in pesos.columns or "PESO" not in pesos.columns:
+        raise ValueError(
+            "O arquivo pesos_tags_lattes.csv deve conter as colunas TAG e PESO, separadas por ';'."
+        )
+
+    pesos = pesos[["TAG", "PESO"]].copy()
+    pesos["TAG"] = pesos["TAG"].map(normalize_space)
+    pesos["PESO"] = pd.to_numeric(pesos["PESO"], errors="coerce").fillna(0.0)
+    pesos = pesos.dropna(subset=["TAG"])
+    pesos = pesos[pesos["TAG"] != ""]
+
+    # Se houver tag repetida no arquivo de pesos, preserva a última ocorrência.
+    pesos = pesos.drop_duplicates(subset=["TAG"], keep="last")
+    return pesos.reset_index(drop=True)
+
+
+def calcular_pontuacao_ponderada(tag_counts: pd.DataFrame, pesos: pd.DataFrame) -> pd.DataFrame:
+    """Calcula FREQUENCIA * PESO para cada tag.
+
+    A tabela final usa a união entre as tags encontradas no XML e as tags
+    listadas no arquivo de pesos. Assim, tags sem ocorrência no currículo
+    aparecem com FREQUENCIA=0; tags sem peso explícito recebem PESO=0.
+    """
+    if tag_counts.empty:
+        tag_counts = pd.DataFrame(columns=["TAG", "FREQUENCIA"])
+    else:
+        tag_counts = tag_counts[["TAG", "FREQUENCIA"]].copy()
+        tag_counts["TAG"] = tag_counts["TAG"].map(normalize_space)
+        tag_counts["FREQUENCIA"] = pd.to_numeric(tag_counts["FREQUENCIA"], errors="coerce").fillna(0).astype(int)
+
+    if pesos.empty:
+        pesos = pd.DataFrame(columns=["TAG", "PESO"])
+    else:
+        pesos = pesos[["TAG", "PESO"]].copy()
+        pesos["TAG"] = pesos["TAG"].map(normalize_space)
+        pesos["PESO"] = pd.to_numeric(pesos["PESO"], errors="coerce").fillna(0.0)
+
+    todas_tags = pd.DataFrame(
+        {"TAG": sorted(set(tag_counts["TAG"].dropna()) | set(pesos["TAG"].dropna()))}
+    )
+
+    resultado = (
+        todas_tags
+        .merge(tag_counts, on="TAG", how="left")
+        .merge(pesos, on="TAG", how="left")
+    )
+    resultado["FREQUENCIA"] = resultado["FREQUENCIA"].fillna(0).astype(int)
+    resultado["PESO"] = resultado["PESO"].fillna(0.0)
+    resultado["PONTOS"] = resultado["FREQUENCIA"] * resultado["PESO"]
+    resultado = resultado.sort_values(["PONTOS", "FREQUENCIA", "TAG"], ascending=[False, False, True])
+    return resultado.reset_index(drop=True)
+
+
 # -----------------------------------------------------------------------------
 # Interface Streamlit
 # -----------------------------------------------------------------------------
@@ -468,12 +539,21 @@ if uploaded_file is not None:
         m3.metric("ORCID", ident["orcid"] or "-")
         m4.metric("Atualização", format_lattes_date(ident["atualizacao"]) or "-")
         st.caption(f"Arquivo lido: {xml_name}")
+        base_name = normalize_space(ident["nome"]).lower().replace(" ", "_") or "lattes"
 
         st.subheader("Resumo")
         c1, c2, c3 = st.columns(3)
         c1.metric("Registros contabilizados", len(df))
         c2.metric("Tipos de item", df["ITEM"].nunique() if not df.empty else 0)
         c3.metric("Ano inicial", int(ano_ref))
+
+        tag_counts = pd.DataFrame(
+            Counter(e.tag for e in root.iter()).most_common(),
+            columns=["TAG", "FREQUENCIA"],
+        )
+        pesos_tags = read_pesos_tags("pesos_tags_lattes.csv")
+        tabela_pontos = calcular_pontuacao_ponderada(tag_counts, pesos_tags)
+        total_pontos = float(tabela_pontos["PONTOS"].sum()) if not tabela_pontos.empty else 0.0
 
         if df.empty:
             st.warning("Nenhum registro encontrado para os grupos e ano inicial selecionados.")
@@ -490,7 +570,6 @@ if uploaded_file is not None:
             st.subheader("Registros detalhados")
             st.dataframe(df, use_container_width=True, hide_index=True)
 
-            base_name = normalize_space(ident["nome"]).lower().replace(" ", "_") or "lattes"
             st.download_button(
                 "Baixar registros detalhados CSV",
                 data=to_csv_bytes(df),
@@ -504,8 +583,24 @@ if uploaded_file is not None:
                 mime="text/csv",
             )
 
+        st.subheader("Nota ponderada por tag")
+        st.metric("Pontuação total ponderada", f"{total_pontos:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+        if pesos_tags.empty:
+            st.warning(
+                "Arquivo pesos_tags_lattes.csv não encontrado no diretório do app. "
+                "A tabela foi calculada com PESO=0 para todas as tags."
+            )
+
+        st.dataframe(tabela_pontos, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Baixar pontuação ponderada por tag CSV",
+            data=to_csv_bytes(tabela_pontos),
+            file_name=f"{base_name}_pontuacao_ponderada_por_tag.csv",
+            mime="text/csv",
+        )
+
         with st.expander("Diagnóstico: todas as tags encontradas no XML"):
-            tag_counts = pd.DataFrame(Counter(e.tag for e in root.iter()).most_common(), columns=["TAG", "FREQUENCIA"])
             st.dataframe(tag_counts, use_container_width=True, hide_index=True)
             st.download_button(
                 "Baixar diagnóstico de tags CSV",
