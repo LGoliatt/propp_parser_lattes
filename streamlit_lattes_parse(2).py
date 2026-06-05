@@ -21,8 +21,6 @@ import pandas as pd
 import streamlit as st
 import xml.etree.ElementTree as ET
 
-USE_LOCAL_TEST_FILE = True
-LOCAL_TEST_FILE = "./data/CV_9030707448549156.zip"
 
 # -----------------------------------------------------------------------------
 # Configuração dos itens contabilizáveis do Lattes
@@ -509,7 +507,7 @@ col_a, col_b = st.columns([1, 2])
 with col_a:
     current_year = dt.date.today().year
     ano_ref = st.number_input(
-        "Ano inicial para contabilização", 
+        "Ano inicial para contabilização",
         min_value=1900,
         max_value=current_year,
         value=max(current_year - 3, 1900),
@@ -557,28 +555,6 @@ if uploaded_file is not None:
         tabela_pontos = calcular_pontuacao_ponderada(tag_counts, pesos_tags)
         total_pontos = float(tabela_pontos["PONTOS"].sum()) if not tabela_pontos.empty else 0.0
 
-        # cria dicionário TAG -> PESO
-        pesos_dict = dict(
-            zip(
-                pesos_tags["TAG"],
-                pesos_tags["PESO"]
-            )
-        )
-
-        # peso individual de cada registro
-        df["VALOR"] = (
-            df["ITEM"]
-            .map(pesos_dict)
-            .fillna(0)
-        )
-
-        df = df[['GRUPO', 'ITEM', 'VALOR',  'NATUREZA', 'ANO', 'TITULO', 'CLASSIFICACAO-DO-EVENTO',
-       'NOME-DO-EVENTO', 'DOI', 'ISSN', 'TITULO-DO-PERIODICO-OU-REVISTA',
-       'TITULO-DO-LIVRO', 'ISBN', 'NOME-DA-EDITORA', 'DURACAO',
-       'INSTITUICAO-PROMOTORA-DO-CURSO', 'INSTITUICAO-PROMOTORA', 'LOCAL',
-       'NOME-DO-ORIENTADO', 'NOME-DA-INSTITUICAO', 'LOCAL-DO-EVENTO',
-       'CIDADE-DO-EVENTO', 'NOME-DO-ORIENTANDO', ]
-       ]
         if df.empty:
             st.warning("Nenhum registro encontrado para os grupos e ano inicial selecionados.")
         else:
