@@ -20,6 +20,85 @@ from typing import BinaryIO, Iterable
 import pandas as pd
 import streamlit as st
 import xml.etree.ElementTree as ET
+from xml.dom import minidom
+
+
+# -----------------------------------------------------------------------------
+# Gera um xml sintético
+# -----------------------------------------------------------------------------
+
+def gerar_xml_teste(item_specs, output="lattes_teste_completo.xml", n_por_tag=5): 
+
+    root = ET.Element(
+        "CURRICULO-VITAE",
+        {
+            "NUMERO-IDENTIFICADOR": "9999999999999999",
+            "DATA-ATUALIZACAO": "01012025",
+        },
+    )
+
+    ET.SubElement(
+        root,
+        "DADOS-GERAIS",
+        {
+            "NOME-COMPLETO": "CURRICULO TESTE",
+            "ORCID-ID": "0000-0000-0000-0000",
+        },
+    )
+
+    for tag, spec in item_specs.items():
+
+        grupo = ET.SubElement(
+            root,
+            "GRUPO-SINTETICO",
+            {
+                "NOME": str(spec.get("grupo", "OUTROS")),
+                "ITEM": str(tag),
+            },
+        )
+
+        for i in range(1, n_por_tag + 1):
+
+            item = ET.SubElement(
+                grupo,
+                tag,
+                {
+                    "ID-SINTETICO": str(i),
+                },
+            )
+
+            attrs = {}
+
+            for campo in spec.get("ano", []):
+                attrs[campo] = "2025"
+
+            for campo in spec.get("natureza", []):
+                attrs[campo] = "TESTE"
+
+            for campo in spec.get("titulo", []):
+                attrs[campo] = f"{tag} TESTE {i}"
+
+            for campo in spec.get("extras", []):
+                attrs[campo] = "5"
+
+            ET.SubElement(
+                item,
+                "DADOS-BASICOS-SINTETICOS",
+                attrs,
+            )
+
+    ET.indent(root, space="    ")
+
+    tree = ET.ElementTree(root)
+
+    tree.write(
+        output,
+        encoding="utf-8",
+        xml_declaration=True,
+    )
+
+    print(f"Arquivo salvo: {output}")
+
 
 # -----------------------------------------------------------------------------
 # Configuração dos itens contabilizáveis do Lattes
@@ -261,6 +340,72 @@ ITEM_SPECS: dict[str, dict] = {
         "extras": ["LOCAL-DO-EVENTO", "CIDADE-DO-EVENTO"],
     },
 }
+
+GENERIC_SPEC = {
+    "grupo": "Outros / agregado",
+    "ano": ["ANO", "ANO-DO-ARTIGO", "ANO-DO-TRABALHO", "ANO-DESENVOLVIMENTO"],
+    "natureza": ["NATUREZA", "TIPO", "CATEGORIA", "FORMA-PARTICIPACAO"],
+    "titulo": [
+        "TITULO",
+        "TITULO-DO-ARTIGO",
+        "TITULO-DO-TRABALHO",
+        "TITULO-DO-LIVRO",
+        "TITULO-DO-CAPITULO-DO-LIVRO",
+        "TITULO-DO-TEXTO",
+        "TITULO-DO-SOFTWARE",
+        "TITULO-DO-TRABALHO",
+        "NOME-DO-EVENTO",
+    ],
+    "extras": [],
+}
+
+# depois de definir seu ITEM_SPECS original:
+TAGS_TXT = [
+    "CULTIVAR-REGISTRADA",
+    "CULTIVAR-PROTEGIDA",
+    "DESENHO-INDUSTRIAL",
+    "MARCA",
+    "TOPOGRAFIA-DE-CIRCUITO-INTEGRADO",
+    "ORIENTACAO-EM-ANDAMENTO-DE-POS-DOUTORADO",
+    "ORIENTACAO-EM-ANDAMENTO-DE-APERFEICOAMENTO-ESPECIALIZACAO",
+    "APRESENTACAO-DE-OBRA-ARTISTICA",
+    "APRESENTACAO-EM-RADIO-OU-TV",
+    "ARRANJO-MUSICAL",
+    "COMPOSICAO-MUSICAL",
+    "CURSO-DE-CURTA-DURACAO",
+    "OBRA-DE-ARTES-VISUAIS",
+    "OUTRA-PRODUCAO-ARTISTICA-CULTURAL",
+    "SONOPLASTIA",
+    "ARTES-CENICAS",
+    "ARTES-VISUAIS",
+    "MUSICA",
+    "CARTA-MAPA-OU-SIMILAR",
+    "EDITORACAO",
+    "MANUTENCAO-DE-OBRA-ARTISTICA",
+    "MAQUETE",
+    "PROGRAMA-DE-RADIO-OU-TV",
+    "MIDIA-SOCIAL-WEBSITE-BLOG",
+    "DEMAIS-TIPOS-DE-PRODUCAO-TECNICA",
+    "TRABALHOS-EM-EVENTOS",
+    "ARTIGOS-PUBLICADOS",
+    "LIVROS-E-CAPITULOS",
+    "TEXTOS-EM-JORNAIS-OU-REVISTAS",
+    "DEMAIS-TIPOS-DE-PRODUCAO-BIBLIOGRAFICA",
+    "ARTIGOS-ACEITOS-PARA-PUBLICACAO",
+    "LIVROS-PUBLICADOS-OU-ORGANIZADOS",
+    "CAPITULOS-DE-LIVROS-PUBLICADOS",
+    "PRODUCAO-ARTISTICA-CULTURAL",
+    "ORIENTACOES-CONCLUIDAS",
+    "FORMACAO-COMPLEMENTAR",
+    "PARTICIPACAO-EM-BANCA-TRABALHOS-CONCLUSAO",
+    "PARTICIPACAO-EM-BANCA-JULGADORA",
+    "PARTICIPACAO-EM-EVENTOS-CONGRESSOS",
+    "ORIENTACOES-EM-ANDAMENTO",
+]
+
+for tag in TAGS_TXT:
+    ITEM_SPECS.setdefault(tag, GENERIC_SPEC.copy())  
+
 
 
 def normalize_space(value: object) -> str:
@@ -602,6 +747,7 @@ with col_b:
 selected_tags = {tag for tag, spec in ITEM_SPECS.items() if spec["grupo"] in set(grupos)}
 
 
+gerar_xml_teste(ITEM_SPECS,"lattes_teste_completo.xml")
 
 
 if uploaded_file is not None:
