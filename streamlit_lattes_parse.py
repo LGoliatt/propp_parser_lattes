@@ -21,7 +21,6 @@ import pandas as pd
 import streamlit as st
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-import plotly.express as px
 
 
 # -----------------------------------------------------------------------------
@@ -975,33 +974,7 @@ if uploaded_file is not None:
             hide_index=True
         )
         
-        # Gráfico de barras com Plotly
-        st.subheader("📊 Distribuição de Pontuação por Grupo")
-        
-        fig = px.bar(
-            df_resultados,
-            x='Grupo',
-            y='Pontuação',
-            title='Pontuação Total por Grupo/Área',
-            color='Grupo',
-            text='Pontuação',
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        
-        fig.update_traces(
-            texttemplate='%{text:.2f}',
-            textposition='outside'
-        )
-        fig.update_layout(
-            showlegend=False,
-            xaxis_title="Grupo/Área",
-            yaxis_title="Pontuação Total",
-            height=500,
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis={'categoryorder':'total descending'}  # Ordenar por pontuação
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+      
         
         # Mostrar métricas em cards
         st.subheader("📈 Métricas por Grupo")
