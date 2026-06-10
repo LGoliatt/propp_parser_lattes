@@ -422,6 +422,7 @@ TAGS_TXT = [
     "ARRANJO-MUSICAL",
     "COMPOSICAO-MUSICAL",
     "CURSO-DE-CURTA-DURACAO",
+    "CURSO-DE-CURTA-DURACAO-MINISTRADO",
     "OBRA-DE-ARTES-VISUAIS",
     "OUTRA-PRODUCAO-ARTISTICA-CULTURAL",
     "SONOPLASTIA",
@@ -829,8 +830,8 @@ def calcular_pontuacao_ponderada(tag_counts: pd.DataFrame, pesos: pd.DataFrame) 
 # Interface Streamlit
 # -----------------------------------------------------------------------------
 
-st.set_page_config(page_title="Leitor XML Lattes", layout="wide")
-st.title("Leitor de Currículo Lattes")
+st.set_page_config(page_title="Extrator XML Lattes", layout="wide")
+st.title("Extrator de Currículo Lattes - Pontuação por Comitê")
 st.caption("Aceita arquivo .xml ou .zip contendo o XML do Lattes e gera tabelas de contagem por item.")
 
 uploaded_file = st.file_uploader(
