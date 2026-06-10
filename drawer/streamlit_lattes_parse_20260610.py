@@ -21,7 +21,6 @@ import pandas as pd
 import streamlit as st
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-import plotly.express as px
 
 
 # -----------------------------------------------------------------------------
@@ -423,6 +422,7 @@ TAGS_TXT = [
     "ARRANJO-MUSICAL",
     "COMPOSICAO-MUSICAL",
     "CURSO-DE-CURTA-DURACAO",
+    "CURSO-DE-CURTA-DURACAO-MINISTRADO",
     "OBRA-DE-ARTES-VISUAIS",
     "OUTRA-PRODUCAO-ARTISTICA-CULTURAL",
     "SONOPLASTIA",
@@ -581,6 +581,13 @@ def summarize_counts(
         empty = pd.DataFrame()
         return empty, empty, empty
 
+    #por_item = (
+    #    df.groupby(["GRUPO", "ITEM"], dropna=False)
+    #    .size()
+    #    .reset_index(name="CONTAGEM")
+    #    .sort_values(["GRUPO", "CONTAGEM", "ITEM"], ascending=[True, False, True])
+    #)
+
     por_item = (
         df.groupby(["GRUPO", "ITEM"], dropna=False)
         .size()
@@ -631,6 +638,7 @@ def summarize_counts(
         ["VALOR", "CONTAGEM"],
         ascending=[False, False]
     )
+
 
     por_item_natureza = (
         df.groupby(["GRUPO", "ITEM", "NATUREZA"], dropna=False)
@@ -718,6 +726,8 @@ def read_pesos_tags_por_area(area: str, path: str | Path = "pesos_tags_lattes.cs
     if not path.is_absolute():
         path = Path(__file__).resolve().parent / path
 
+    # Mantido a verificação de existência física apenas se necessário, 
+    # mas como você está lendo da URL do Google, o foco é o download online.
     sheet_id = "1rW1U0nG9Ua6Y5VOwzWxXfpSaLEKFrUp5XqXwGcuetjw"
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
 
@@ -824,17 +834,13 @@ st.set_page_config(page_title="Extrator XML Lattes", layout="wide")
 st.title("Extrator de Currículo Lattes - Pontuação por Comitê")
 st.caption("Aceita arquivo .xml ou .zip contendo o XML do Lattes e gera tabelas de contagem por item.")
 
-# Inicializar session state para controle de recalculo
-if 'recalcular' not in st.session_state:
-    st.session_state.recalcular = False
-
 uploaded_file = st.file_uploader(
     "Escolha o arquivo XML ou ZIP do Currículo Lattes",
     type=["xml", "zip"],
     accept_multiple_files=False,
 )
 
-col_a, col_b, col_c = st.columns([1, 2, 1])
+col_a, col_b = st.columns([1, 2])
 with col_a:
     current_year = dt.date.today().year
     ano_ref = st.number_input(
@@ -843,7 +849,6 @@ with col_a:
         max_value=current_year,
         value=max(current_year - 3, 1900),
         step=1,
-        key="ano_ref_input"
     )
 
 with col_b:
@@ -852,34 +857,21 @@ with col_b:
         "Grupos a contabilizar",
         options=grupos_disponiveis,
         default=grupos_disponiveis,
-        key="grupos_select"
     )
-
-with col_c:
-    st.write("")
-    st.write("")
-    if st.button("🔄 Recalcular com novo ano", use_container_width=True):
-        st.cache_data.clear()
-        st.session_state.recalcular = True
-        st.rerun()
 
 selected_tags = {tag for tag, spec in ITEM_SPECS.items() if spec["grupo"] in set(grupos)}
 
+
+#gerar_xml_teste(ITEM_SPECS,"lattes_teste_completo.xml")
+
+df_pontos = []
 if uploaded_file is not None:
     try:
         tree, xml_name = read_uploaded_lattes(uploaded_file)
         root = tree.getroot()
         ident = extract_identification(root)
-        
-        # Extrai os registros UMA VEZ com o ano_ref atual
-        df_completo = extract_records(root, int(ano_ref), selected_tags)
-        
-        # Recalcula tag_counts baseado no df_completo filtrado por ano
-        if not df_completo.empty:
-            tag_counts_completo = df_completo["ITEM"].value_counts().reset_index()
-            tag_counts_completo.columns = ["TAG", "FREQUENCIA"]
-        else:
-            tag_counts_completo = pd.DataFrame(columns=["TAG", "FREQUENCIA"])
+        df = extract_records(root, int(ano_ref), selected_tags)
+
 
         st.subheader("Identificação")
         m1, m2, m3, m4 = st.columns(4)
@@ -892,83 +884,122 @@ if uploaded_file is not None:
 
         st.subheader("Resumo")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Registros contabilizados", len(df_completo))
-        c2.metric("Tipos de item", df_completo["ITEM"].nunique() if not df_completo.empty else 0)
+        c1.metric("Registros contabilizados", len(df))
+        c2.metric("Tipos de item", df["ITEM"].nunique() if not df.empty else 0)
         c3.metric("Ano inicial", int(ano_ref))
+
+        tag_counts = pd.DataFrame(
+            Counter(e.tag for e in root.iter()).most_common(),
+            columns=["TAG", "FREQUENCIA"],
+        )
         
-        # Informação sobre o filtro de ano
-        st.info(f"📅 As pontuações consideram apenas produções a partir de {int(ano_ref)}")
-        
+        pesos_tags = read_pesos_tags("pesos_tags_lattes.csv")
+                    
         #--
         grupos_para_buscar = ['BIO', 'SAU', 'EXA', 'HUM', 'CSA', 'ENG', 'LLA']
         
-        dic_pontos = {'Nome': ident["nome"]}
-        
-        # Armazenar resultados para o gráfico final
-        resultados_por_grupo = []
-        
+        dic_pontos={'Nome':ident["nome"]}
         for grupo_alvo in grupos_para_buscar:
-            st.header(f"\n[BUSCA] Isolando dados do grupo: {grupo_alvo}")
-            
-            # Carrega os pesos específicos da área
+            st.header(f"\n[BUSCA] Isolando dados do grupo: {grupo_alvo} ")
+            st.write(f"\n[BUSCA] Isolando dados do grupo: {grupo_alvo} ")
             pesos_tags = read_pesos_tags_por_area(grupo_alvo, "pesos_tags_lattes.csv")
-            
-            # Usa as contagens já filtradas por ano
-            tabela_pontos = calcular_pontuacao_ponderada(tag_counts_completo, pesos_tags)
+                
+            #--
+            tabela_pontos = calcular_pontuacao_ponderada(tag_counts, pesos_tags)
             total_pontos = float(tabela_pontos["PONTOS"].sum()) if not tabela_pontos.empty else 0.0
             dic_pontos[grupo_alvo] = total_pontos
-            resultados_por_grupo.append({"Grupo": grupo_alvo, "Pontuação": total_pontos})
             
             # cria dicionário TAG -> PESO
-            pesos_dict = dict(zip(pesos_tags["TAG"], pesos_tags["PESO"]))
-            
-            # Adiciona colunas de pontuação ao DataFrame
-            if not df_completo.empty:
-                df_completo["VALOR"] = df_completo["ITEM"].map(pesos_dict).fillna(0).astype(float)
-                df_completo["PONTOS_ITEM"] = df_completo["ITEM"].map(pesos_dict).fillna(0)
-            
-            # Gera as tabelas de contagem
-            por_item, por_item_natureza, por_ano = summarize_counts(df_completo, pesos_tags)
-            
-            if df_completo.empty:
-                st.warning(f"Nenhum registro encontrado para {grupo_alvo} no ano {int(ano_ref)}")
+            pesos_dict = dict(
+                zip(
+                    pesos_tags["TAG"],
+                    pesos_tags["PESO"]
+                )
+            )
+    
+            # peso individual de cada registro
+            df["VALOR"] = (
+                df["ITEM"]
+                .map(pesos_dict)
+                .fillna(0)
+            )
+            df["VALOR"] = df["VALOR"].astype(float)
+    
+            df["PONTOS_ITEM"] = (
+                df["ITEM"]
+                .map(pesos_dict)
+                .fillna(0)
+            )
+    
+            #df["PONTOS_ACUMULADOS"] = (
+            #    df["ITEM"]
+            #    .map(pesos_dict)
+            #    .fillna(0)
+            #    .cumsum()
+            #)
+    
+    
+            por_item, por_item_natureza, por_ano = summarize_counts(df, pesos_tags)
+    
+    
+            if df.empty:
+                st.warning("Nenhum registro encontrado para os grupos e ano inicial selecionados.")
             else:
-                st.subheader(f"Contagem por item - {grupo_alvo}")
-                total_pontos_grupo = por_item['VALOR'].sum() if not por_item.empty else 0
-                
-                # Remove a coluna TAG se existir
-                if 'TAG' in por_item.columns:
-                    por_item_display = por_item.drop(['TAG'], axis=1)
-                else:
-                    por_item_display = por_item
-                
-                # Exibe métrica e tabela conforme solicitado
-                st.metric("Pontuação total ponderada", 
-                         f"{total_pontos_grupo:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-                st.dataframe(por_item_display, use_container_width=True, hide_index=True)
-                
-                # Mantém os registros detalhados conforme solicitado
+                st.subheader("Contagem por item")
+                total_pontos = por_item['VALOR'].sum() 
+                por_item.drop(['TAG'], axis=1, inplace=True)
+                st.metric("Pontuação total ponderada", f"{total_pontos:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                st.dataframe(por_item, use_container_width=True, hide_index=True)
+    
+                #st.subheader("Contagem por item e natureza")
+                #st.dataframe(por_item_natureza, use_container_width=True, hide_index=True)
+    
+                #st.subheader("Contagem por ano e grupo")
+                #st.dataframe(por_ano, use_container_width=True, hide_index=True)
+    
                 st.subheader("Registros detalhados")
-                st.dataframe(df_completo, use_container_width=True, hide_index=True)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+    
+                #st.download_button(
+                #    "Baixar registros detalhados CSV",
+                #    data=to_csv_bytes(df),
+                #    file_name=f"{base_name}_detalhado.csv",  
+                #    mime="text/csv",
+                #)
+                #st.download_button(
+                #    "Baixar contagem por item CSV",
+                #    data=to_csv_bytes(por_item),
+                #    file_name=f"{base_name}_contagem_por_item.csv",
+                #    mime="text/csv",
+                #)
+    
         
-        # Mostrar resumo consolidado com gráficos
-        st.markdown("---")
-        st.header("📈 Resumo Consolidado de Pontuação por Comitê")
+        # ... (código anterior permanece igual até o final do loop)
+
+        # CORREÇÃO: Remova a linha df_pontos.append(dic_pontos) e substitua por:
+        if 'lista_pontuacoes' not in st.session_state:
+            st.session_state.lista_pontuacoes = []
         
-        # Criar DataFrame com os resultados
-        df_resultados = pd.DataFrame(resultados_por_grupo)
+        st.session_state.lista_pontuacoes.append(dic_pontos)
+    
+    except Exception as exc:
+        st.error(f"Erro ao processar o arquivo: {exc}")
+    
+    # CORREÇÃO: Crie o DataFrame corretamente
+    if 'lista_pontuacoes' in st.session_state and st.session_state.lista_pontuacoes:
+        # Método 1: Usar pd.DataFrame.from_dict com orient='index' (recomendado)
+        df_pontos = pd.DataFrame.from_dict(st.session_state.lista_pontuacoes)
         
-        # Ordenar por pontuação (maior para menor)
-        df_resultados = df_resultados.sort_values("Pontuação", ascending=False)
+        # OU Método 2: Se preferir o formato atual (uma linha por grupo)
+        # df_pontos = pd.DataFrame([st.session_state.lista_pontuacoes[0]], index=[0])
         
-        # Mostrar tabela de pontuações
         st.subheader("🏆 Pontuação por Grupo/Área")
         
         # Estilizar o DataFrame
         st.dataframe(
-            df_resultados.style
-            .format({'Pontuação': '{:.2f}'})
-            .background_gradient(cmap='Blues', subset=['Pontuação'])
+            df_pontos.style
+            .format('{:.2f}', subset=grupos_para_buscar)
+            .background_gradient(cmap='Blues', subset=grupos_para_buscar)
             .set_properties(**{'text-align': 'center'})
             .set_table_styles([{'selector': 'th', 'props': [('text-align', 'center')]}]),
             use_container_width=True,
@@ -978,8 +1009,17 @@ if uploaded_file is not None:
         # Gráfico de barras com Plotly
         st.subheader("📊 Distribuição de Pontuação por Grupo")
         
+        # Preparar dados para o gráfico
+        df_plot = df_pontos.melt(
+            id_vars=['Nome'],
+            var_name='Grupo',
+            value_name='Pontuação'
+        )
+        
+        import plotly.express as px
+        
         fig = px.bar(
-            df_resultados,
+            df_plot,
             x='Grupo',
             y='Pontuação',
             title='Pontuação Total por Grupo/Área',
@@ -1003,71 +1043,16 @@ if uploaded_file is not None:
         
         st.plotly_chart(fig, use_container_width=True)
         
-        # Mostrar métricas em cards
+        # Opcional: Mostrar métricas adicionais
         st.subheader("📈 Métricas por Grupo")
         cols = st.columns(len(grupos_para_buscar))
         for idx, grupo in enumerate(grupos_para_buscar):
             with cols[idx]:
-                pontuacao = dic_pontos.get(grupo, 0)
+                pontuacao = df_pontos[grupo].iloc[0] if not df_pontos.empty else 0
                 st.metric(
                     label=grupo,
                     value=f"{pontuacao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                    delta=None,
-                    help=f"Pontuação total do comitê {grupo}"
+                    delta=None
                 )
-        
-        # Opção para baixar os resultados
-        st.subheader("💾 Download dos Resultados")
-        col_download1, col_download2 = st.columns(2)
-        
-        with col_download1:
-            if not df_completo.empty:
-                st.download_button(
-                    "📥 Baixar registros detalhados (CSV)",
-                    data=to_csv_bytes(df_completo),
-                    file_name=f"{base_name}_detalhado_ano_{ano_ref}.csv",
-                    mime="text/csv",
-                )
-        
-        with col_download2:
-            if not df_resultados.empty:
-                st.download_button(
-                    "📥 Baixar pontuação por comitê (CSV)",
-                    data=to_csv_bytes(df_resultados),
-                    file_name=f"{base_name}_pontuacao_comites_ano_{ano_ref}.csv",
-                    mime="text/csv",
-                )
-        
-        # Reset do estado de recalculo
-        if st.session_state.recalcular:
-            st.session_state.recalcular = False
-
-    except Exception as exc:
-        st.error(f"Erro ao processar o arquivo: {exc}")
-        st.exception(exc)
-
-else:
-    st.info("👈 Por favor, envie um arquivo XML ou ZIP do Currículo Lattes para começar.")
-    
-    # Mostrar instruções
-    with st.expander("ℹ️ Instruções de uso"):
-        st.markdown("""
-        ### Como usar este aplicativo:
-        
-        1. **Exporte seu currículo Lattes** em formato XML (recomendado) ou ZIP contendo o XML
-        2. **Faça o upload** do arquivo usando o botão acima
-        3. **Selecione o ano inicial** para contabilizar as produções
-        4. **Escolha os grupos** que deseja analisar
-        5. **Aguarde o processamento** e visualize os resultados
-        
-        ### Funcionalidades:
-        - ✅ Extração automática de produções, orientações, bancas e eventos
-        - ✅ Cálculo de pontuação ponderada por diferentes comitês (BIO, SAU, EXA, etc.)
-        - ✅ Filtro por ano de produção
-        - ✅ Visualização gráfica dos resultados
-        - ✅ Download dos dados em CSV
-        
-        ### Pesos e pontuações:
-        Os pesos são carregados automaticamente de uma planilha online do Google Sheets,
-        contendo as pontuações específicas para cada comitê avaliador.
-        """)
+    else:
+        st.warning("Nenhuma pontuação calculada ainda.")
