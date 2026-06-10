@@ -863,7 +863,7 @@ selected_tags = {tag for tag, spec in ITEM_SPECS.items() if spec["grupo"] in set
 
 #gerar_xml_teste(ITEM_SPECS,"lattes_teste_completo.xml")
 
-
+df_pontos = []
 if uploaded_file is not None:
     try:
         tree, xml_name = read_uploaded_lattes(uploaded_file)
@@ -893,92 +893,165 @@ if uploaded_file is not None:
         )
         
         pesos_tags = read_pesos_tags("pesos_tags_lattes.csv")
-        pesos_tags = read_pesos_tags_por_area('BIO', "pesos_tags_lattes.csv")
+                    
         #--
+        grupos_para_buscar = ['BIO', 'SAU', 'EXA', 'HUM', 'CSA', 'ENG', 'LLA']
         
-        #--
-        tabela_pontos = calcular_pontuacao_ponderada(tag_counts, pesos_tags)
-        total_pontos = float(tabela_pontos["PONTOS"].sum()) if not tabela_pontos.empty else 0.0
-
-        # cria dicionário TAG -> PESO
-        pesos_dict = dict(
-            zip(
-                pesos_tags["TAG"],
-                pesos_tags["PESO"]
+        dic_pontos={'Nome':ident["nome"]}
+        for grupo_alvo in grupos_para_buscar:
+            st.header(f"\n[BUSCA] Isolando dados do grupo: {grupo_alvo} ")
+            st.write(f"\n[BUSCA] Isolando dados do grupo: {grupo_alvo} ")
+            pesos_tags = read_pesos_tags_por_area(grupo_alvo, "pesos_tags_lattes.csv")
+                
+            #--
+            tabela_pontos = calcular_pontuacao_ponderada(tag_counts, pesos_tags)
+            total_pontos = float(tabela_pontos["PONTOS"].sum()) if not tabela_pontos.empty else 0.0
+            dic_pontos[grupo_alvo] = total_pontos
+            
+            # cria dicionário TAG -> PESO
+            pesos_dict = dict(
+                zip(
+                    pesos_tags["TAG"],
+                    pesos_tags["PESO"]
+                )
             )
-        )
-
-        # peso individual de cada registro
-        df["VALOR"] = (
-            df["ITEM"]
-            .map(pesos_dict)
-            .fillna(0)
-        )
-        df["VALOR"] = df["VALOR"].astype(float)
-
-        df["PONTOS_ITEM"] = (
-            df["ITEM"]
-            .map(pesos_dict)
-            .fillna(0)
-        )
-
-        #df["PONTOS_ACUMULADOS"] = (
-        #    df["ITEM"]
-        #    .map(pesos_dict)
-        #    .fillna(0)
-        #    .cumsum()
-        #)
-
-
-        por_item, por_item_natureza, por_ano = summarize_counts(df, pesos_tags)
-
-
-        if df.empty:
-            st.warning("Nenhum registro encontrado para os grupos e ano inicial selecionados.")
-        else:
-            st.subheader("Contagem por item")
-            total_pontos = por_item['VALOR'].sum() 
-            por_item.drop(['TAG'], axis=1, inplace=True)
-            st.metric("Pontuação total ponderada", f"{total_pontos:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-            st.dataframe(por_item, use_container_width=True, hide_index=True)
-
-            st.subheader("Contagem por item e natureza")
-            st.dataframe(por_item_natureza, use_container_width=True, hide_index=True)
-
-            st.subheader("Contagem por ano e grupo")
-            st.dataframe(por_ano, use_container_width=True, hide_index=True)
-
-            st.subheader("Registros detalhados")
-            st.dataframe(df, use_container_width=True, hide_index=True)
-
-            st.download_button(
-                "Baixar registros detalhados CSV",
-                data=to_csv_bytes(df),
-                file_name=f"{base_name}_detalhado.csv",  
-                mime="text/csv",
+    
+            # peso individual de cada registro
+            df["VALOR"] = (
+                df["ITEM"]
+                .map(pesos_dict)
+                .fillna(0)
             )
-            st.download_button(
-                "Baixar contagem por item CSV",
-                data=to_csv_bytes(por_item),
-                file_name=f"{base_name}_contagem_por_item.csv",
-                mime="text/csv",
+            df["VALOR"] = df["VALOR"].astype(float)
+    
+            df["PONTOS_ITEM"] = (
+                df["ITEM"]
+                .map(pesos_dict)
+                .fillna(0)
             )
+    
+            #df["PONTOS_ACUMULADOS"] = (
+            #    df["ITEM"]
+            #    .map(pesos_dict)
+            #    .fillna(0)
+            #    .cumsum()
+            #)
+    
+    
+            por_item, por_item_natureza, por_ano = summarize_counts(df, pesos_tags)
+    
+    
+            if df.empty:
+                st.warning("Nenhum registro encontrado para os grupos e ano inicial selecionados.")
+            else:
+                st.subheader("Contagem por item")
+                total_pontos = por_item['VALOR'].sum() 
+                por_item.drop(['TAG'], axis=1, inplace=True)
+                st.metric("Pontuação total ponderada", f"{total_pontos:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                st.dataframe(por_item, use_container_width=True, hide_index=True)
+    
+                #st.subheader("Contagem por item e natureza")
+                #st.dataframe(por_item_natureza, use_container_width=True, hide_index=True)
+    
+                #st.subheader("Contagem por ano e grupo")
+                #st.dataframe(por_ano, use_container_width=True, hide_index=True)
+    
+                st.subheader("Registros detalhados")
+                st.dataframe(df, use_container_width=True, hide_index=True)
+    
+                #st.download_button(
+                #    "Baixar registros detalhados CSV",
+                #    data=to_csv_bytes(df),
+                #    file_name=f"{base_name}_detalhado.csv",  
+                #    mime="text/csv",
+                #)
+                #st.download_button(
+                #    "Baixar contagem por item CSV",
+                #    data=to_csv_bytes(por_item),
+                #    file_name=f"{base_name}_contagem_por_item.csv",
+                #    mime="text/csv",
+                #)
+    
+        
+        # ... (código anterior permanece igual até o final do loop)
 
-
-        if pesos_tags.empty:
-            st.warning(
-                "Arquivo pesos_tags_lattes.csv não encontrado no diretório do app. "
-                "A tabela foi calculada com PESO=0 para todas as tags."
-            )
-
-        with st.expander("Diagnóstico: todas as tags encontradas no XML"):
-            st.dataframe(tag_counts, use_container_width=True, hide_index=True)
-            st.download_button(
-                "Baixar diagnóstico de tags CSV",
-                data=to_csv_bytes(tag_counts),
-                file_name="diagnostico_tags_lattes.csv",
-                mime="text/csv",
-            )
-
+        # CORREÇÃO: Remova a linha df_pontos.append(dic_pontos) e substitua por:
+        if 'lista_pontuacoes' not in st.session_state:
+            st.session_state.lista_pontuacoes = []
+        
+        st.session_state.lista_pontuacoes.append(dic_pontos)
+    
     except Exception as exc:
         st.error(f"Erro ao processar o arquivo: {exc}")
+    
+    # CORREÇÃO: Crie o DataFrame corretamente
+    if 'lista_pontuacoes' in st.session_state and st.session_state.lista_pontuacoes:
+        # Método 1: Usar pd.DataFrame.from_dict com orient='index' (recomendado)
+        df_pontos = pd.DataFrame.from_dict(st.session_state.lista_pontuacoes)
+        
+        # OU Método 2: Se preferir o formato atual (uma linha por grupo)
+        # df_pontos = pd.DataFrame([st.session_state.lista_pontuacoes[0]], index=[0])
+        
+        st.subheader("🏆 Pontuação por Grupo/Área")
+        
+        # Estilizar o DataFrame
+        st.dataframe(
+            df_pontos.style
+            .format('{:.2f}', subset=grupos_para_buscar)
+            .background_gradient(cmap='Blues', subset=grupos_para_buscar)
+            .set_properties(**{'text-align': 'center'})
+            .set_table_styles([{'selector': 'th', 'props': [('text-align', 'center')]}]),
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Gráfico de barras com Plotly
+        st.subheader("📊 Distribuição de Pontuação por Grupo")
+        
+        # Preparar dados para o gráfico
+        df_plot = df_pontos.melt(
+            id_vars=['Nome'],
+            var_name='Grupo',
+            value_name='Pontuação'
+        )
+        
+        import plotly.express as px
+        
+        fig = px.bar(
+            df_plot,
+            x='Grupo',
+            y='Pontuação',
+            title='Pontuação Total por Grupo/Área',
+            color='Grupo',
+            text='Pontuação',
+            color_discrete_sequence=px.colors.qualitative.Set3
+        )
+        
+        fig.update_traces(
+            texttemplate='%{text:.2f}',
+            textposition='outside'
+        )
+        fig.update_layout(
+            showlegend=False,
+            xaxis_title="Grupo/Área",
+            yaxis_title="Pontuação Total",
+            height=500,
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis={'categoryorder':'total descending'}  # Ordenar por pontuação
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Opcional: Mostrar métricas adicionais
+        st.subheader("📈 Métricas por Grupo")
+        cols = st.columns(len(grupos_para_buscar))
+        for idx, grupo in enumerate(grupos_para_buscar):
+            with cols[idx]:
+                pontuacao = df_pontos[grupo].iloc[0] if not df_pontos.empty else 0
+                st.metric(
+                    label=grupo,
+                    value=f"{pontuacao:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                    delta=None
+                )
+    else:
+        st.warning("Nenhuma pontuação calculada ainda.")
