@@ -21,7 +21,6 @@ import pandas as pd
 import streamlit as st
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-import plotly.express as px
 
 
 # -----------------------------------------------------------------------------
